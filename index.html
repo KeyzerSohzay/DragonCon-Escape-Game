@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>A.G.E.N.T. Terminal // DragonCon Grid</title>
+  <style>
+    :root {
+      --bg-color: #0d0f12;
+      --term-green: #00ff66;
+      --term-dim: #008837;
+      --term-alert: #ff3333;
+      --term-warn: #ffcc00;
+      --font-stack: "Courier New", Courier, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--term-green);
+      font-family: var(--font-stack);
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      padding: 10px;
+    }
+
+    /* Retro CRT Monitor Frame */
+    .terminal-container {
+      width: 100%;
+      max-width: 800px;
+      height: 90vh;
+      background: #050709;
+      border: 2px solid var(--term-green);
+      box-shadow: 0 0 20px rgba(0, 255, 102, 0.2);
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* CRT Scanline Effect Overlay */
+    .terminal-container::before {
+      content: " ";
+      display: block;
+      position: absolute;
+      top: 0; left: 0; bottom: 0; right: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+      background-size: 100% 4px;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    /* Header Bar */
+    .terminal-header {
+      background-color: rgba(0, 255, 102, 0.1);
+      border-bottom: 1px solid var(--term-green);
+      padding: 8px 12px;
+      font-size: 0.85rem;
+      display: flex;
+      justify-content: space-between;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* Main Output Window */
+    .terminal-body {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-size: 0.95rem;
+      line-height: 1.4;
+    }
+
+    .line {
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .system { color: var(--term-green); }
+    .dim { color: var(--term-dim); }
+    .alert { color: var(--term-alert); font-weight: bold; }
+    .warn { color: var(--term-warn); }
+    .user-input { color: #ffffff; }
+
+    /* Command Prompt Line */
+    .terminal-input-line {
+      display: flex;
+      align-items: center;
+      padding: 12px 15px;
+      border-top: 1px solid var(--term-dim);
+      background: #080a0d;
+    }
+
+    .prompt {
+      color: var(--term-green);
+      margin-right: 8px;
+      font-weight: bold;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #ffffff;
+      font-family: var(--font-stack);
+      font-size: 1rem;
+    }
+
+    /* Glitch Animation for Alerts */
+    .glitch {
+      animation: glitch 0.2s ease infinite alternate;
+    }
+
+    @keyframes glitch {
+      0% { transform: translate(0); }
+      20% { transform: translate(-2px, 2px); }
+      40% { transform: translate(-2px, -2px); }
+      60% { transform: translate(2px, 2px); }
+      80% { transform: translate(2px, -2px); }
+      100% { transform: translate(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="terminal-container">
+    <div class="terminal-header">
+      <span>SYS_NAME: DRAGON_NET_V2.6</span>
+      <span id="node-status">STATUS: NODE 1/3 LOCKED</span>
+    </div>
+    
+    <div class="terminal-body" id="terminal-body">
+      <!-- Output rendered here dynamically -->
+    </div>
+
+    <div class="terminal-input-line">
+      <span class="prompt">OPERATIVE@GRID:&gt;</span>
+      <input type="text" id="cmd-input" placeholder="Type command or HELP..." autofocus autocomplete="off" />
+    </div>
+  </div>
+
+  <script>
+    /******************************************************************
+     * AUDIO ENGINE (Web Audio API - No external files needed)
+     ******************************************************************/
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
+    function playBeep(freq = 800, type = 'sine', duration = 0.05) {
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    }
+
+    /******************************************************************
+     * PUZZLE STATE & DATABASE
+     ******************************************************************/
+    let gameState = JSON.parse(localStorage.getItem('dragoncon_arg_state')) || {
+      currentNode: 1,
+      unlockedNodes: [],
+      completed: false
+    };
+
+    const NODES = {
+      1: {
+        title: "NODE 1: Skybridge Uplink",
+        location: "Hyatt-Marriott Skybridge",
+        briefing: "LOCKED. To calibrate frequency, count total light overhead fixtures on the Skybridge (A) and multiply by 10.\nTarget Format: UNLOCK [NUMBER]",
+        solution: "1200", // Example answer: 120 lights * 10
+        hint: "Walk across the main Hyatt-to-Marriott skybridge and count every overhead panel light overhead.",
+        successText: "FREQUENCY MATCHED. Node 1 overridden. Security protocol lowered."
+      },
+      2: {
+        title: "NODE 2: Visual Matrix",
+        location: "Marriott Atrium",
+        briefing: "LOCKED. Find the carpet pattern near the Pulse Bar. Input the missing 4-digit year embedded in the commemorative plaque nearby.\nTarget Format: UNLOCK [YEAR]",
+        solution: "1985", // Example answer
+        hint: "Look for historic markers/plaques near the lower level atrium elevators.",
+        successText: "VISUAL MATRIX SYNCHRONIZED. Node 2 online."
+      },
+      3: {
+        title: "NODE 3: Core Override",
+        location: "AmericasMart / Con Floor",
+        briefing: "FINAL NODE. Find an operative carrying at least 8 badge ribbons. Ask them for the 'Dragon Passphrase' or enter the master system code.\nTarget Format: OVERRIDE [PASSPHRASE]",
+        solution: "CULT OF CARPET", // Example answer
+        hint: "Target ribbon hoarders near registration or major hall corridors.",
+        successText: "CRITICAL OVERRIDE SUCCESSFUL. MAINFRAME RESTORED!"
+      }
+    };
+
+    /******************************************************************
+     * TERMINAL ENGINE LOGIC
+     ******************************************************************/
+    const outputElem = document.getElementById('terminal-body');
+    const inputElem = document.getElementById('cmd-input');
+    const statusElem = document.getElementById('node-status');
+
+    function printLine(text, classType = 'system') {
+      const line = document.createElement('div');
+      line.className = `line ${classType}`;
+      line.textContent = text;
+      outputElem.appendChild(line);
+      outputElem.scrollTop = outputElem.scrollHeight;
+    }
+
+    function updateStatusUI() {
+      if (gameState.completed) {
+        statusElem.textContent = "STATUS: MAINFRAME SECURED";
+        statusElem.style.color = "var(--term-green)";
+      } else {
+        statusElem.textContent = `STATUS: NODE ${gameState.currentNode}/3 ACTIVE`;
+      }
+      localStorage.setItem('dragoncon_arg_state', JSON.stringify(gameState));
+    }
+
+    function renderNodeBriefing() {
+      if (gameState.completed) {
+        printLine("\n==================================================", "system");
+        printLine("MISSION COMPLETE. All systems restored. Contact your handler for reward.", "system");
+        printLine("==================================================\n", "system");
+        return;
+      }
+
+      const activeNode = NODES[gameState.currentNode];
+      printLine(`\n--- [ CURRENT OBJECTIVE: ${activeNode.title} ] ---`, "warn");
+      printLine(`LOCATION TARGET: ${activeNode.location}`, "dim");
+      printLine(`DIRECTIVE: ${activeNode.briefing}\n`, "system");
+    }
+
+    function initTerminal() {
+      printLine("INITIALIZING REMOTE HANDLER TERMINAL v2.6...", "dim");
+      printLine("CONNECTING TO DRAGONCON MESH NETWORK...", "dim");
+      printLine("ESTABLISHING ENCRYPTED LINK... CONNECTED.", "system");
+      printLine("Type 'HELP' for a list of available directives.\n", "system");
+      updateStatusUI();
+      renderNodeBriefing();
+    }
+
+    function processCommand(rawInput) {
+      const input = rawInput.trim();
+      if (!input) return;
+
+      printLine(`OPERATIVE@GRID:> ${input}`, "user-input");
+      playBeep(600, 'square', 0.03);
+
+      const parts = input.split(' ');
+      const cmd = parts[0].toUpperCase();
+      const arg = parts.slice(1).join(' ').toUpperCase();
+
+      switch (cmd) {
+        case 'HELP':
+          printLine("AVAILABLE COMMANDS:", "system");
+          printLine("  STATUS          - Display overall mission progress.", "dim");
+          printLine("  BRIEF           - Re-print current node objective.", "dim");
+          printLine("  HINT            - Request tactical hint from handler.", "dim");
+          printLine("  UNLOCK [CODE]   - Submit node unlock credential.", "dim");
+          printLine("  OVERRIDE [CODE] - Submit node 3 final override.", "dim");
+          printLine("  CLEAR           - Clear terminal window text.", "dim");
+          printLine("  RESET           - Reset game data (Irreversible).", "dim");
+          break;
+
+        case 'STATUS':
+          printLine(`Current Node: ${gameState.currentNode} / 3`, "system");
+          printLine(`Unlocked Nodes: ${gameState.unlockedNodes.join(', ') || 'None'}`, "dim");
+          break;
+
+        case 'BRIEF':
+          renderNodeBriefing();
+          break;
+
+        case 'HINT':
+          playBeep(400, 'sine', 0.1);
+          printLine(`[HANDLERS HINT]: ${NODES[gameState.currentNode].hint}`, "warn");
+          break;
+
+        case 'UNLOCK':
+        case 'OVERRIDE':
+          if (gameState.completed) {
+            printLine("All nodes are already unlocked.", "warn");
+            break;
+          }
+
+          const currentNodeData = NODES[gameState.currentNode];
+          if (arg === currentNodeData.solution) {
+            // Correct Answer
+            playBeep(1000, 'sine', 0.1);
+            playBeep(1400, 'sine', 0.15);
+            printLine(currentNodeData.successText, "system");
+            
+            gameState.unlockedNodes.push(gameState.currentNode);
+            
+            if (gameState.currentNode < 3) {
+              gameState.currentNode++;
+              updateStatusUI();
+              renderNodeBriefing();
+            } else {
+              gameState.completed = true;
+              updateStatusUI();
+              renderNodeBriefing();
+            }
+          } else {
+            // Wrong Answer
+            playBeep(200, 'sawtooth', 0.2);
+            outputElem.classList.add('glitch');
+            setTimeout(() => outputElem.classList.remove('glitch'), 300);
+            printLine("ACCESS DENIED. Invalid credential token submitted.", "alert");
+          }
+          break;
+
+        case 'CLEAR':
+          outputElem.innerHTML = '';
+          break;
+
+        case 'RESET':
+          localStorage.removeItem('dragoncon_arg_state');
+          gameState = { currentNode: 1, unlockedNodes: [], completed: false };
+          outputElem.innerHTML = '';
+          printLine("SYSTEM MEMORY WIPED.", "alert");
+          initTerminal();
+          break;
+
+        default:
+          playBeep(150, 'sawtooth', 0.1);
+          printLine(`Unknown command: '${cmd}'. Type 'HELP' for directive list.`, "alert");
+          break;
+      }
+    }
+
+    // Input Event Listeners
+    inputElem.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        processCommand(inputElem.value);
+        inputElem.value = '';
+      }
+    });
+
+    // Start App
+    initTerminal();
+  </script>
+</body>
+</html>
