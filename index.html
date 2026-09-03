@@ -23,27 +23,24 @@
     html, body {
       width: 100%;
       height: 100%;
-      position: fixed;
-      top: 0;
-      left: 0;
-      overflow: hidden;
       background-color: var(--bg-color);
       color: var(--term-green);
       font-family: var(--font-stack);
-      touch-action: none;
+      overflow: hidden;
     }
 
     body {
       display: flex;
-      justify-content: center;
-      align-items: center;
+      flex-direction: column;
       padding: 5px;
+      height: 100dvh;
     }
 
     .terminal-container {
       width: 100%;
       max-width: 800px;
-      height: 100%;
+      height: calc(100% - 45px);
+      margin: 0 auto;
       background: #050709;
       border: 2px solid var(--term-green);
       box-shadow: 0 0 15px rgba(0, 255, 102, 0.2);
@@ -66,33 +63,6 @@
       flex-shrink: 0;
     }
 
-    /* Input moved to top to prevent iOS pan/scroll bug */
-    .terminal-input-line {
-      display: flex;
-      align-items: center;
-      padding: 8px 10px;
-      border-bottom: 1px solid var(--term-dim);
-      background: #080a0d;
-      flex-shrink: 0;
-    }
-
-    .prompt {
-      color: var(--term-green);
-      margin-right: 6px;
-      font-weight: bold;
-      font-size: 0.8rem;
-    }
-
-    input[type="text"] {
-      flex: 1;
-      background: transparent;
-      border: none;
-      outline: none;
-      color: #ffffff;
-      font-family: var(--font-stack);
-      font-size: 16px;
-    }
-
     .terminal-body {
       flex: 1;
       padding: 10px;
@@ -102,7 +72,6 @@
       gap: 6px;
       font-size: 0.85rem;
       line-height: 1.35;
-      touch-action: pan-y;
       -webkit-overflow-scrolling: touch;
     }
 
@@ -127,6 +96,38 @@
     .alert { color: var(--term-alert); font-weight: bold; }
     .warn { color: var(--term-warn); }
     .user-input { color: #ffffff; }
+
+    /* Dedicated Bottom Bar */
+    .terminal-input-line {
+      width: 100%;
+      max-width: 800px;
+      margin: 4px auto 0 auto;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+      border: 1px solid var(--term-green);
+      border-radius: 6px;
+      background: #080a0d;
+      flex-shrink: 0;
+    }
+
+    .prompt {
+      color: var(--term-green);
+      margin-right: 6px;
+      font-weight: bold;
+      font-size: 0.8rem;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #ffffff;
+      font-family: var(--font-stack);
+      font-size: 16px;
+    }
 
     /* RETRO DYSENTERY OVERLAY */
     #death-screen {
@@ -185,12 +186,6 @@
       <span>SYS_NAME: DRAGON_NET_V2.6</span>
       <span id="node-status">STATUS: ONLINE</span>
     </div>
-    
-    <!-- INPUT AT TOP OF TERMINAL -->
-    <div class="terminal-input-line">
-      <span class="prompt">OPERATIVE@GRID:&gt;</span>
-      <input type="text" id="cmd-input" placeholder="Type command..." autocomplete="off" spellcheck="false" />
-    </div>
 
     <div class="terminal-body" id="terminal-body"></div>
 
@@ -211,6 +206,12 @@
       <div class="death-text">YOU HAVE DIED OF DYSENTERY.</div>
       <div class="retry-prompt">[ TAP SCREEN OR PRESS ENTER TO RETRY ]</div>
     </div>
+  </div>
+
+  <!-- INPUT BAR SEPARATED FROM MAIN CONTAINER -->
+  <div class="terminal-input-line">
+    <span class="prompt">OPERATIVE@GRID:&gt;</span>
+    <input type="text" id="cmd-input" placeholder="Type command..." autocomplete="off" spellcheck="false" />
   </div>
 
   <script>
@@ -258,19 +259,6 @@
 
     let printQueue = [];
     let isTyping = false;
-
-    // Force Safari to stay locked at position 0,0
-    window.addEventListener('scroll', () => {
-      window.scrollTo(0, 0);
-    });
-
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', () => {
-        const container = document.getElementById('terminal-container');
-        container.style.height = `${window.visualViewport.height - 10}px`;
-        window.scrollTo(0, 0);
-      });
-    }
 
     function printLine(text, classType = 'system', speed = 12) {
       printQueue.push({ text, classType, speed });
@@ -344,7 +332,6 @@
     function showDysenteryDeath() {
       inputElem.blur();
       deathScreen.style.display = 'flex';
-      window.scrollTo(0, 0);
     }
 
     function dismissDeathScreen() {
