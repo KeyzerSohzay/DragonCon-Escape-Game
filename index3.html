@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>A.G.E.N.T. Terminal // DragonCon Grid</title>
   <style>
     :root {
@@ -46,22 +46,11 @@
       overflow: hidden;
     }
 
-    .terminal-container::before {
-      content: " ";
-      display: block;
-      position: absolute;
-      top: 0; left: 0; bottom: 0; right: 0;
-      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
-      background-size: 100% 4px;
-      z-index: 10;
-      pointer-events: none;
-    }
-
     .terminal-header {
       background-color: rgba(0, 255, 102, 0.1);
       border-bottom: 1px solid var(--term-green);
       padding: 8px 12px;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       display: flex;
       justify-content: space-between;
       text-transform: uppercase;
@@ -75,8 +64,9 @@
       display: flex;
       flex-direction: column;
       gap: 8px;
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       line-height: 1.4;
+      -webkit-overflow-scrolling: touch;
     }
 
     .line {
@@ -90,17 +80,6 @@
     .warn { color: var(--term-warn); }
     .user-input { color: #ffffff; }
 
-    .typing::after {
-      content: '█';
-      animation: blink 0.8s infinite;
-      margin-left: 2px;
-    }
-
-    @keyframes blink {
-      0%, 50% { opacity: 1; }
-      51%, 100% { opacity: 0; }
-    }
-
     .terminal-input-line {
       display: flex;
       align-items: center;
@@ -113,6 +92,7 @@
       color: var(--term-green);
       margin-right: 8px;
       font-weight: bold;
+      font-size: 0.85rem;
     }
 
     input[type="text"] {
@@ -124,19 +104,6 @@
       font-family: var(--font-stack);
       font-size: 1rem;
     }
-
-    .glitch {
-      animation: glitch 0.2s ease infinite alternate;
-    }
-
-    @keyframes glitch {
-      0% { transform: translate(0); }
-      20% { transform: translate(-2px, 2px); }
-      40% { transform: translate(-2px, -2px); }
-      60% { transform: translate(2px, 2px); }
-      80% { transform: translate(2px, -2px); }
-      100% { transform: translate(0); }
-    }
   </style>
 </head>
 <body>
@@ -144,28 +111,26 @@
   <div class="terminal-container">
     <div class="terminal-header">
       <span>SYS_NAME: DRAGON_NET_V2.6</span>
-      <span id="node-status">STATUS: INITIALIZING...</span>
+      <span id="node-status">STATUS: ONLINE</span>
     </div>
     
     <div class="terminal-body" id="terminal-body"></div>
 
     <div class="terminal-input-line">
       <span class="prompt">OPERATIVE@GRID:&gt;</span>
-      <input type="text" id="cmd-input" placeholder="Type command..." autofocus autocomplete="off" />
+      <input type="text" id="cmd-input" placeholder="Type command..." autocomplete="off" spellcheck="false" />
     </div>
   </div>
 
   <script>
-    /******************************************************************
-     * AUDIO ENGINE (WITH MOBILE AUTOPLAY FIX)
-     ******************************************************************/
+    // --- SAFE MOBILE AUDIO INITIALIZATION ---
     let audioCtx = null;
     
-    function initAudio() {
+    function enableAudio() {
       if (!audioCtx) {
-        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-        if (AudioContextClass) {
-          audioCtx = new AudioContextClass();
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (AudioContext) {
+          audioCtx = new AudioContext();
         }
       }
       if (audioCtx && audioCtx.state === 'suspended') {
@@ -173,42 +138,38 @@
       }
     }
 
-    function playBeep(freq = 800, type = 'sine', duration = 0.05) {
+    function playSound(freq, type, duration) {
       if (!audioCtx || audioCtx.state !== 'running') return;
       try {
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.type = type;
-        osc.frequency.value = freq;
-        gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.02, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
         osc.connect(gain);
         gain.connect(audioCtx.destination);
         osc.start();
         osc.stop(audioCtx.currentTime + duration);
       } catch (e) {
-        // Silently catch audio restrictions
+        // Ignore audio failures on unsupported hardware
       }
     }
 
-    function playKeyClick() {
-      const freq = 1200 + Math.random() * 400;
-      playBeep(freq, 'triangle', 0.015);
-    }
+    document.addEventListener('touchstart', enableAudio, { once: true });
+    document.addEventListener('click', enableAudio, { once: true });
 
-    // Enable audio on first screen interaction
-    window.addEventListener('touchstart', initAudio, { once: true });
-    window.addEventListener('click', initAudio, { once: true });
-    window.addEventListener('keydown', initAudio, { once: true });
-
-    /******************************************************************
-     * PUZZLE DATABASE & STATE
-     ******************************************************************/
-    let gameState = JSON.parse(localStorage.getItem('dragoncon_arg_state')) || {
+    // --- GAME STATE & DATABASE ---
+    let gameState = {
       currentNode: 1,
       unlockedNodes: [],
       completed: false
     };
+
+    try {
+      const saved = localStorage.getItem('dragoncon_arg_state');
+      if (saved) gameState = JSON.parse(saved);
+    } catch(e) {}
 
     const NODES = {
       1: {
@@ -237,97 +198,67 @@
       }
     };
 
-    /******************************************************************
-     * TELETYPE TYPING ENGINE
-     ******************************************************************/
+    // --- DOM ELEMENTS ---
     const outputElem = document.getElementById('terminal-body');
     const inputElem = document.getElementById('cmd-input');
     const statusElem = document.getElementById('node-status');
-    let printQueue = [];
-    let isTyping = false;
 
-    function printLine(text, classType = 'system', delay = 15) {
-      printQueue.push({ text, classType, delay });
-      if (!isTyping) {
-        processQueue();
-      }
-    }
-
-    function processQueue() {
-      if (printQueue.length === 0) {
-        isTyping = false;
-        return;
-      }
-
-      isTyping = true;
-      const { text, classType, delay } = printQueue.shift();
+    // --- ROBUST PRINT ENGINE ---
+    function printLine(text, classType = 'system') {
       const line = document.createElement('div');
-      line.className = `line ${classType} typing`;
+      line.className = `line ${classType}`;
+      line.textContent = text;
       outputElem.appendChild(line);
-
-      let charIndex = 0;
-
-      function typeChar() {
-        if (charIndex < text.length) {
-          line.textContent += text.charAt(charIndex);
-          charIndex++;
-          outputElem.scrollTop = outputElem.scrollHeight;
-          if (Math.random() > 0.3) playKeyClick();
-          setTimeout(typeChar, delay);
-        } else {
-          line.classList.remove('typing');
-          setTimeout(processQueue, 50);
-        }
-      }
-
-      typeChar();
+      outputElem.scrollTop = outputElem.scrollHeight;
     }
 
     function updateStatusUI() {
       if (gameState.completed) {
-        statusElem.textContent = "STATUS: MAINFRAME SECURED";
+        statusElem.textContent = "STATUS: SECURED";
       } else {
-        statusElem.textContent = `STATUS: NODE ${gameState.currentNode}/3 ACTIVE`;
+        statusElem.textContent = `NODE ${gameState.currentNode}/3 ACTIVE`;
       }
-      localStorage.setItem('dragoncon_arg_state', JSON.stringify(gameState));
+      try {
+        localStorage.setItem('dragoncon_arg_state', JSON.stringify(gameState));
+      } catch(e) {}
     }
 
     function renderNodeBriefing() {
       if (gameState.completed) {
-        printLine("==================================================", "system", 5);
-        printLine("MISSION COMPLETE. All systems restored. Contact your handler for reward.", "system", 20);
-        printLine("==================================================", "system", 5);
+        printLine("==================================================", "system");
+        printLine("MISSION COMPLETE. All systems restored.", "system");
+        printLine("==================================================", "system");
         return;
       }
 
       const activeNode = NODES[gameState.currentNode];
-      printLine(`--- [ CURRENT OBJECTIVE: ${activeNode.title} ] ---`, "warn", 15);
-      printLine(`LOCATION TARGET: ${activeNode.location}`, "dim", 15);
-      printLine(`DIRECTIVE: ${activeNode.briefing}`, "system", 15);
+      printLine(`--- [ CURRENT OBJECTIVE: ${activeNode.title} ] ---`, "warn");
+      printLine(`LOCATION TARGET: ${activeNode.location}`, "dim");
+      printLine(`DIRECTIVE: ${activeNode.briefing}`, "system");
     }
 
     function initTerminal() {
-      printLine("==================================================", "system", 5);
-      printLine("   WELCOME TO YOUR DRAGONCON PUZZLE CHALLENGE", "warn", 15);
-      printLine("==================================================", "system", 5);
-      printLine("INITIALIZING REMOTE HANDLER TERMINAL v2.6...", "dim", 10);
-      printLine("ESTABLISHING ENCRYPTED LINK... CONNECTED.", "system", 15);
-      printLine("Type 'HELP' for a list of available directives.\n", "system", 15);
+      outputElem.innerHTML = '';
+      printLine("==================================================", "system");
+      printLine("   WELCOME TO YOUR DRAGONCON PUZZLE CHALLENGE", "warn");
+      printLine("==================================================", "system");
+      printLine("INITIALIZING TERMINAL v2.6...", "dim");
+      printLine("LINK ESTABLISHED.", "system");
+      printLine("Type 'HELP' for available directives.\n", "system");
       updateStatusUI();
       renderNodeBriefing();
     }
 
     function verifyAnswer(submittedText) {
       if (gameState.completed) {
-        printLine("All nodes are already unlocked.", "warn", 15);
+        printLine("All nodes are already unlocked.", "warn");
         return;
       }
 
       const currentNodeData = NODES[gameState.currentNode];
       if (submittedText === currentNodeData.solution) {
-        playBeep(1000, 'sine', 0.1);
-        playBeep(1400, 'sine', 0.15);
-        printLine(currentNodeData.successText, "system", 20);
+        playSound(800, 'sine', 0.1);
+        printLine(currentNodeData.successText, "system");
         
         gameState.unlockedNodes.push(gameState.currentNode);
         
@@ -341,10 +272,8 @@
           renderNodeBriefing();
         }
       } else {
-        playBeep(200, 'sawtooth', 0.2);
-        outputElem.classList.add('glitch');
-        setTimeout(() => outputElem.classList.remove('glitch'), 300);
-        printLine("ACCESS DENIED. Invalid credential token submitted.", "alert", 15);
+        playSound(200, 'sawtooth', 0.2);
+        printLine("ACCESS DENIED. Invalid credential token submitted.", "alert");
       }
     }
 
@@ -352,13 +281,8 @@
       const input = rawInput.trim();
       if (!input) return;
 
-      const userLine = document.createElement('div');
-      userLine.className = 'line user-input';
-      userLine.textContent = `OPERATIVE@GRID:> ${input}`;
-      outputElem.appendChild(userLine);
-      outputElem.scrollTop = outputElem.scrollHeight;
-
-      playBeep(600, 'square', 0.03);
+      printLine(`OPERATIVE@GRID:> ${input}`, "user-input");
+      playSound(600, 'square', 0.03);
 
       const parts = input.split(' ');
       const cmd = parts[0].toUpperCase();
@@ -366,19 +290,19 @@
 
       switch (cmd) {
         case 'HELP':
-          printLine("AVAILABLE COMMANDS:", "system", 10);
-          printLine("  STATUS          - Display overall mission progress.", "dim", 10);
-          printLine("  BRIEF           - Re-print current node objective.", "dim", 10);
-          printLine("  HINT            - Request tactical hint from handler.", "dim", 10);
-          printLine("  UNLOCK [CODE]   - Submit node unlock credential.", "dim", 10);
-          printLine("  OVERRIDE [CODE] - Submit node 3 final override.", "dim", 10);
-          printLine("  CLEAR           - Clear terminal window text.", "dim", 10);
-          printLine("  RESET           - Reset game data (Irreversible).", "dim", 10);
+          printLine("AVAILABLE COMMANDS:", "system");
+          printLine("  STATUS          - Display overall progress.", "dim");
+          printLine("  BRIEF           - Show current objective.", "dim");
+          printLine("  HINT            - Request tactical hint.", "dim");
+          printLine("  UNLOCK [CODE]   - Submit node credential.", "dim");
+          printLine("  OVERRIDE [CODE] - Submit node 3 override.", "dim");
+          printLine("  CLEAR           - Clear display screen.", "dim");
+          printLine("  RESET           - Reset game save data.", "dim");
           break;
 
         case 'STATUS':
-          printLine(`Current Node: ${gameState.currentNode} / 3`, "system", 15);
-          printLine(`Unlocked Nodes: ${gameState.unlockedNodes.join(', ') || 'None'}`, "dim", 15);
+          printLine(`Current Node: ${gameState.currentNode} / 3`, "system");
+          printLine(`Unlocked Nodes: ${gameState.unlockedNodes.join(', ') || 'None'}`, "dim");
           break;
 
         case 'BRIEF':
@@ -386,8 +310,7 @@
           break;
 
         case 'HINT':
-          playBeep(400, 'sine', 0.1);
-          printLine(`[HANDLERS HINT]: ${NODES[gameState.currentNode].hint}`, "warn", 20);
+          printLine(`[HANDLER HINT]: ${NODES[gameState.currentNode].hint}`, "warn");
           break;
 
         case 'UNLOCK':
@@ -400,10 +323,8 @@
           break;
 
         case 'RESET':
-          localStorage.removeItem('dragoncon_arg_state');
+          try { localStorage.removeItem('dragoncon_arg_state'); } catch(e) {}
           gameState = { currentNode: 1, unlockedNodes: [], completed: false };
-          outputElem.innerHTML = '';
-          printLine("SYSTEM MEMORY WIPED.", "alert", 10);
           initTerminal();
           break;
 
@@ -412,8 +333,7 @@
           if (cmd === currentSolution || input.toUpperCase() === currentSolution) {
             verifyAnswer(currentSolution);
           } else {
-            playBeep(150, 'sawtooth', 0.1);
-            printLine(`Unknown command: '${cmd}'. Type 'HELP' for directive list.`, "alert", 15);
+            printLine(`Unknown command: '${cmd}'. Type 'HELP' for commands.`, "alert");
           }
           break;
       }
@@ -426,7 +346,7 @@
       }
     });
 
-    // Start typewriter sequence immediately
+    // Run initialization
     initTerminal();
   </script>
 </body>
