@@ -20,25 +20,31 @@
       padding: 0;
     }
 
-    body {
+    html, body {
+      width: 100%;
+      height: 100%;
       background-color: var(--bg-color);
       color: var(--term-green);
       font-family: var(--font-stack);
-      height: 100vh;
+      overflow: hidden;
+    }
+
+    body {
       display: flex;
       justify-content: center;
       align-items: center;
-      overflow: hidden;
-      padding: 10px;
+      padding: 5px;
+      /* Dynamic viewport height handles mobile browser address bars */
+      height: 100dvh; 
     }
 
     .terminal-container {
       width: 100%;
       max-width: 800px;
-      height: 90vh;
+      height: 100%;
       background: #050709;
       border: 2px solid var(--term-green);
-      box-shadow: 0 0 20px rgba(0, 255, 102, 0.2);
+      box-shadow: 0 0 15px rgba(0, 255, 102, 0.2);
       border-radius: 8px;
       display: flex;
       flex-direction: column;
@@ -49,23 +55,24 @@
     .terminal-header {
       background-color: rgba(0, 255, 102, 0.1);
       border-bottom: 1px solid var(--term-green);
-      padding: 8px 12px;
-      font-size: 0.8rem;
+      padding: 6px 10px;
+      font-size: 0.75rem;
       display: flex;
       justify-content: space-between;
       text-transform: uppercase;
       letter-spacing: 1px;
+      flex-shrink: 0;
     }
 
     .terminal-body {
       flex: 1;
-      padding: 15px;
+      padding: 10px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
-      gap: 8px;
-      font-size: 0.9rem;
-      line-height: 1.4;
+      gap: 6px;
+      font-size: 0.85rem;
+      line-height: 1.35;
       -webkit-overflow-scrolling: touch;
     }
 
@@ -94,16 +101,17 @@
     .terminal-input-line {
       display: flex;
       align-items: center;
-      padding: 12px 15px;
+      padding: 8px 10px;
       border-top: 1px solid var(--term-dim);
       background: #080a0d;
+      flex-shrink: 0;
     }
 
     .prompt {
       color: var(--term-green);
-      margin-right: 8px;
+      margin-right: 6px;
       font-weight: bold;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
     }
 
     input[type="text"] {
@@ -113,7 +121,7 @@
       outline: none;
       color: #ffffff;
       font-family: var(--font-stack);
-      font-size: 1rem;
+      font-size: 0.95rem;
     }
 
     /* --- RETRO DYSENTERY DEATH OVERLAY --- */
@@ -131,9 +139,10 @@
       justify-content: center;
       align-items: center;
       text-align: center;
-      padding: 20px;
+      padding: 10px;
       font-family: "Courier New", Courier, monospace;
       animation: flashRed 0.4s ease-out;
+      overflow-y: auto;
     }
 
     @keyframes flashRed {
@@ -144,30 +153,30 @@
     .tombstone {
       white-space: pre;
       color: #ffffff;
-      font-size: 0.75rem;
+      font-size: 0.65rem;
       line-height: 1.1;
-      margin-bottom: 20px;
+      margin-bottom: 12px;
     }
 
     .death-text {
       color: #ff3333;
-      font-size: 1.2rem;
+      font-size: 1.05rem;
       font-weight: bold;
       text-transform: uppercase;
-      letter-spacing: 2px;
-      margin-bottom: 15px;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
     }
 
     .retry-prompt {
       color: #888888;
-      font-size: 0.85rem;
+      font-size: 0.75rem;
       animation: blink 1s infinite;
     }
   </style>
 </head>
 <body>
 
-  <div class="terminal-container">
+  <div class="terminal-container" id="terminal-container">
     <div class="terminal-header">
       <span>SYS_NAME: DRAGON_NET_V2.6</span>
       <span id="node-status">STATUS: ONLINE</span>
@@ -245,7 +254,28 @@
     let printQueue = [];
     let isTyping = false;
 
-    function printLine(text, classType = 'system', speed = 15) {
+    // --- MOBILE KEYBOARD RESIZING LOGIC ---
+    function adjustForMobileKeyboard() {
+      if (window.visualViewport) {
+        // Dynamically resize body to match visible viewport height above keyboard
+        document.body.style.height = `${window.visualViewport.height}px`;
+        outputElem.scrollTop = outputElem.scrollHeight;
+      }
+    }
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', adjustForMobileKeyboard);
+      window.visualViewport.addEventListener('scroll', adjustForMobileKeyboard);
+    }
+
+    inputElem.addEventListener('focus', () => {
+      setTimeout(() => {
+        adjustForMobileKeyboard();
+        outputElem.scrollTop = outputElem.scrollHeight;
+      }, 300);
+    });
+
+    function printLine(text, classType = 'system', speed = 12) {
       printQueue.push({ text, classType, speed });
       if (!isTyping) {
         processQueue();
@@ -274,7 +304,7 @@
           setTimeout(typeNextChar, speed);
         } else {
           line.classList.remove('typing');
-          setTimeout(processQueue, 30);
+          setTimeout(processQueue, 20);
         }
       }
 
@@ -310,12 +340,13 @@
       printLine(`  ${activeNode.title.toUpperCase()}`, "warn", 10);
       printLine(`==================================================`, "system", 5);
       printLine(`LOCATION TARGET: ${activeNode.location}`, "dim", 10);
-      printLine(`DIRECTIVE: ${activeNode.briefing}\n`, "system", 12);
+      printLine(`DIRECTIVE: ${activeNode.briefing}\n`, "system", 10);
       printLine("Type 'HELP' for available directives.", "dim", 10);
     }
 
     function showDysenteryDeath() {
       deathScreen.style.display = 'flex';
+      inputElem.blur(); // Dismisses mobile keyboard so death animation is fully visible
     }
 
     function dismissDeathScreen() {
@@ -361,7 +392,6 @@
       const cmd = parts[0].toUpperCase();
       const arg = parts.slice(1).join(' ').trim();
 
-      // System navigation commands
       switch (cmd) {
         case 'HELP':
           printLine(`OPERATIVE@GRID:> ${input}`, "user-input", 5);
@@ -404,7 +434,6 @@
           break;
 
         default:
-          // Any other input is treated directly as a puzzle answer attempt
           verifyAnswer(input);
           break;
       }
