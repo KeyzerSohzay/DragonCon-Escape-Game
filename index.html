@@ -1094,7 +1094,7 @@
         const finalContainer = document.createElement('div');
         finalContainer.className = 'final-container';
         finalContainer.innerHTML = `
-          <img src="./my-animation.gif" alt="Completion Animation" class="final-animation-gif" />
+          <img src="./my-animation.GIF" alt="Completion Animation" class="final-animation-gif" />
           <div class="final-complete-message">Nodes complete.
 Stay tuned for more…
 
@@ -1115,28 +1115,13 @@ P.S. Have fun you guys!</div>
       }
 
       const activeNode = NODES[gameState.currentNode];
-      printLine(`==================================================`, "system", 5);
-      printLine(`  ${activeNode.title.toUpperCase()}`, "warn", 10);
-      printLine(`==================================================`, "system", 5);
-      printLine(`LOCATION TARGET: ${activeNode.location}`, "dim", 10);
-
-      if (activeNode.hasImage) {
-        const mediaContainer = document.createElement('div');
-        mediaContainer.className = 'media-container';
-        mediaContainer.innerHTML = `
-          <img src="./image1" alt="Taemin" class="node-image" 
-               onerror="
-                 if (!this.tried) { this.tried = 1; this.src='./image1.jpeg'; }
-                 else if (this.tried === 1) { this.tried = 2; this.src='./image1.jpg'; }
-                 else if (this.tried === 2) { this.tried = 3; this.src='./image1.png'; }
-                 else if (this.tried === 3) { this.tried = 4; this.src='./image.1'; }
-               " />
-          <div class="node-image-text">${activeNode.imageText}</div>
-        `;
-        outputElem.appendChild(mediaContainer);
-      }
 
       if (gameState.currentNode === 8 && !gameState.node8BriefingSeen) {
+        printLine(`==================================================`, "system", 5);
+        printLine(`  ${activeNode.title.toUpperCase()}`, "warn", 10);
+        printLine(`==================================================`, "system", 5);
+        printLine(`LOCATION TARGET: ${activeNode.location}\n`, "dim", 10);
+
         const briefingWrap = document.createElement('div');
         briefingWrap.className = 'briefing-container';
         
@@ -1161,14 +1146,39 @@ P.S. Have fun you guys!</div>
           };
 
           terminalContainer.addEventListener('click', advanceHandler);
-        }, 5000);
+        }, 10000);
 
         return;
       }
 
       terminalContainer.onclick = null;
 
-      printLine(`DIRECTIVE:\n${activeNode.briefing}\n`, "system", 10);
+      if (gameState.currentNode !== 8 || !gameState.node8BriefingSeen) {
+        printLine(`==================================================`, "system", 5);
+        printLine(`  ${activeNode.title.toUpperCase()}`, "warn", 10);
+        printLine(`==================================================`, "system", 5);
+        printLine(`LOCATION TARGET: ${activeNode.location}`, "dim", 10);
+      }
+
+      if (activeNode.hasImage) {
+        const mediaContainer = document.createElement('div');
+        mediaContainer.className = 'media-container';
+        mediaContainer.innerHTML = `
+          <img src="./image1" alt="Taemin" class="node-image" 
+               onerror="
+                 if (!this.tried) { this.tried = 1; this.src='./image1.jpeg'; }
+                 else if (this.tried === 1) { this.tried = 2; this.src='./image1.jpg'; }
+                 else if (this.tried === 2) { this.tried = 3; this.src='./image1.png'; }
+                 else if (this.tried === 3) { this.tried = 4; this.src='./image.1'; }
+               " />
+          <div class="node-image-text">${activeNode.imageText}</div>
+        `;
+        outputElem.appendChild(mediaContainer);
+      }
+
+      if (gameState.currentNode !== 8) {
+        printLine(`DIRECTIVE:\n${activeNode.briefing}\n`, "system", 10);
+      }
 
       if (gameState.currentNode === 6) {
         const scrambleContainer = document.createElement('div');
