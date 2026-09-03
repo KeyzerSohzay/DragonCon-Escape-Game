@@ -170,6 +170,150 @@
       text-transform: uppercase;
     }
 
+    /* CONSOLE WRAPPER STYLES */
+    .console-wrapper {
+      width: 100%;
+      max-width: 600px;
+      margin: 10px auto;
+      background: #111625;
+      border: 3px solid #00ffcc;
+      border-radius: 12px;
+      padding: 15px;
+      box-sizing: border-box;
+      color: #e0e0e0;
+      font-family: 'Courier New', Courier, monospace;
+      box-shadow: 0 0 20px rgba(0, 255, 204, 0.2);
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .console-header {
+      text-align: center;
+      border-bottom: 2px dashed #00ffcc;
+      padding-bottom: 8px;
+      margin-bottom: 12px;
+    }
+
+    .console-header h2 {
+      margin: 0;
+      color: #00ffcc;
+      font-size: 1.2rem;
+    }
+
+    .console-section {
+      background: #1a2235;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+
+    .console-label {
+      display: block;
+      font-size: 0.8rem;
+      color: #8892b0;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+
+    .switch-group {
+      display: flex;
+      justify-content: space-around;
+    }
+
+    .toggle-btn {
+      background: #0b0f19;
+      border: 2px solid #4a5568;
+      color: #ff4d4d;
+      padding: 8px 16px;
+      font-size: 0.9rem;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    .toggle-btn.active {
+      color: #00ffcc;
+      border-color: #00ffcc;
+      box-shadow: 0 0 10px rgba(0, 255, 204, 0.4);
+    }
+
+    .slider-display {
+      text-align: center;
+      font-size: 1.3rem;
+      color: #00ffcc;
+      margin-top: 4px;
+      font-weight: bold;
+    }
+
+    input[type=range] {
+      width: 100%;
+      height: 12px;
+      border-radius: 6px;
+      background: #0b0f19;
+      outline: none;
+      accent-color: #00ffcc;
+    }
+
+    .keypad-input {
+      width: 100%;
+      background: #0b0f19;
+      border: 2px solid #00ffcc;
+      color: #00ffcc;
+      font-size: 1.2rem;
+      text-align: center;
+      padding: 6px;
+      letter-spacing: 4px;
+      box-sizing: border-box;
+      border-radius: 6px;
+      text-transform: uppercase;
+      font-family: inherit;
+    }
+
+    .master-btn {
+      width: 100%;
+      padding: 12px;
+      background: #ff4d4d;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: bold;
+      letter-spacing: 2px;
+      cursor: pointer;
+      margin-top: 6px;
+      box-shadow: 0 4px 0 #990000;
+      touch-action: manipulation;
+    }
+
+    .master-btn:active {
+      transform: translateY(2px);
+      box-shadow: 0 2px 0 #990000;
+    }
+
+    .feedback-msg {
+      text-align: center;
+      margin-top: 10px;
+      font-weight: bold;
+      min-height: 20px;
+      font-size: 0.85rem;
+    }
+
+    .status-success { color: #00ffcc; }
+    .status-error { color: #ff4d4d; }
+
+    /* FINAL RED COMPLETION MESSAGE */
+    .final-complete-message {
+      color: var(--term-alert);
+      font-size: 1.4rem;
+      font-weight: bold;
+      text-align: center;
+      margin: 30px auto;
+      letter-spacing: 2px;
+      text-shadow: 0 0 10px rgba(255, 51, 51, 0.7);
+      line-height: 1.5;
+    }
+
     /* WARNING OVERLAY */
     #glitch-overlay {
       display: none;
@@ -439,7 +583,7 @@
     </div>
   </div>
 
-  <div class="virtual-keyboard">
+  <div class="virtual-keyboard" id="keyboard-container">
     <div class="kb-row">
       <button class="key" onclick="pressKey('1')">1</button>
       <button class="key" onclick="pressKey('2')">2</button>
@@ -571,7 +715,14 @@
         hint: "I said Taemin is always the answer… but not the password",
         hasImage: true,
         imageText: "Taemin is always the answer",
-        successText: "ALL SYSTEMS ONLINE. MAINFRAME FULLY RESTORED!"
+        successText: "NODE 7 UNLOCKED. TRANSFERRING CONTROL TO EMERGENCY POWER SYSTEM..."
+      },
+      8: {
+        title: "NODE 8: EMERGENCY POWER OVERRIDE",
+        location: "SECURITY CONSOLE",
+        briefing: "Set breakers, adjust frequency alignment, and enter master passcode to complete manual override.",
+        isConsoleNode: true,
+        hint: "Breakers: ON - OFF - ON | Frequency: 300 | Passcode: 90OZE"
       }
     };
 
@@ -584,6 +735,7 @@
     const hintTextElem = document.getElementById('hint-text');
     const glitchOverlay = document.getElementById('glitch-overlay');
     const inputLineContainer = document.getElementById('input-line-container');
+    const keyboardContainer = document.getElementById('keyboard-container');
 
     let currentInput = "";
     let printQueue = [];
@@ -629,6 +781,8 @@
     }
 
     window.addEventListener('keydown', (e) => {
+      if (gameState.currentNode === 8 && !gameState.completed) return;
+
       if (e.key === 'Enter') {
         submitCommand();
       } else if (e.key === 'Backspace') {
@@ -678,7 +832,7 @@
       if (gameState.completed) {
         statusElem.textContent = "STATUS: SECURED";
       } else {
-        statusElem.textContent = `NODE ${gameState.currentNode}/7 ACTIVE`;
+        statusElem.textContent = `NODE ${gameState.currentNode}/8 ACTIVE`;
       }
     }
 
@@ -721,12 +875,10 @@
 
       if (scrambleTextElem) scrambleTextElem.textContent = NODES[6].solution;
 
-      /* Shortened revealed time to 200ms (under 0.5s) */
       setTimeout(() => {
         node6FlashFinished = true;
       }, 200);
 
-      /* Faster cycle frequency at 40ms */
       node6ScrambleFastInterval = setInterval(() => {
         if (scrambleTextElem) {
           scrambleTextElem.textContent = getScrambledText();
@@ -777,22 +929,74 @@
       }, 1000);
     }
 
+    /* CONSOLE PUZZLE LOGIC */
+    function toggleSwitch(btn) {
+      if (btn.innerText === "OFF") {
+        btn.innerText = "ON";
+        btn.classList.add("active");
+      } else {
+        btn.innerText = "OFF";
+        btn.classList.remove("active");
+      }
+    }
+
+    function updateSlider(val) {
+      document.getElementById('sliderVal').innerText = val;
+    }
+
+    function checkConsoleSolution() {
+      const sw1 = document.getElementById('sw1').innerText === "ON";
+      const sw2 = document.getElementById('sw2').innerText === "OFF";
+      const sw3 = document.getElementById('sw3').innerText === "ON";
+      
+      const sliderVal = document.getElementById('freqSlider').value;
+      const passcode = document.getElementById('passcode').value.trim().toUpperCase();
+      const feedback = document.getElementById('feedback');
+
+      if (sw1 && !sw2 && sw3 && sliderVal === "300" && passcode === "90OZE") {
+        feedback.className = "feedback-msg status-success";
+        feedback.innerText = "ACCESS GRANTED! OVERRIDE COMPLETE...";
+        
+        setTimeout(() => {
+          gameState.unlockedNodes.push(8);
+          gameState.completed = true;
+          updateStatusUI();
+          renderNodePage();
+        }, 1200);
+      } else {
+        failCount++;
+        feedback.className = "feedback-msg status-error";
+        feedback.innerText = "OVERRIDE FAILED: Check breaker sequence, frequency, or passcode.";
+        if (failCount >= 3) {
+          setTimeout(showDysenteryDeath, 800);
+        }
+      }
+    }
+
     function renderNodePage() {
       clearScreen();
       stopNode6Timers();
       
       if (gameState.completed) {
         if (inputLineContainer) inputLineContainer.style.display = 'none';
-        
-        printLine("==================================================", "system", 5);
-        printLine("MISSION COMPLETE. ALL MAINFRAME NODES SECURED.", "system", 15);
-        printLine("==================================================", "system", 5);
+        if (keyboardContainer) keyboardContainer.style.display = 'none';
+
+        const finalMsg = document.createElement('div');
+        finalMsg.className = 'final-complete-message';
+        finalMsg.innerHTML = 'Nodes complete… for now… stay tuned for more';
+        outputElem.appendChild(finalMsg);
         
         terminalBody.scrollTop = terminalBody.scrollHeight;
         return;
       }
 
-      if (inputLineContainer) inputLineContainer.style.display = 'flex';
+      if (gameState.currentNode === 8) {
+        if (inputLineContainer) inputLineContainer.style.display = 'none';
+        if (keyboardContainer) keyboardContainer.style.display = 'none';
+      } else {
+        if (inputLineContainer) inputLineContainer.style.display = 'flex';
+        if (keyboardContainer) keyboardContainer.style.display = 'flex';
+      }
 
       const activeNode = NODES[gameState.currentNode];
       printLine(`==================================================`, "system", 5);
@@ -830,7 +1034,42 @@
         startNode6DecayTimer();
       }
 
-      printLine("Type 'HELP' for available directives.", "dim", 10);
+      if (gameState.currentNode === 8) {
+        const consoleElem = document.createElement('div');
+        consoleElem.className = 'console-wrapper';
+        consoleElem.innerHTML = `
+          <div class="console-header">
+            <h2>SECURITY OVERRIDE CONSOLE</h2>
+            <small>SYSTEM STATUS: LOCKED</small>
+          </div>
+
+          <div class="console-section">
+            <span class="console-label">1. SUBSYSTEM BREAKERS (AUX / MAIN / GRID)</span>
+            <div class="switch-group">
+              <button class="toggle-btn" id="sw1" onclick="toggleSwitch(this)">OFF</button>
+              <button class="toggle-btn" id="sw2" onclick="toggleSwitch(this)">OFF</button>
+              <button class="toggle-btn" id="sw3" onclick="toggleSwitch(this)">OFF</button>
+            </div>
+          </div>
+
+          <div class="console-section">
+            <span class="console-label">2. OOZE TIME FREQUENCY ALIGNMENT</span>
+            <input type="range" id="freqSlider" min="100" max="500" step="10" value="200" oninput="updateSlider(this.value)">
+            <div class="slider-display" id="sliderVal">200</div>
+          </div>
+
+          <div class="console-section">
+            <span class="console-label">3. ENTER OVERRIDE KEYCODE</span>
+            <input type="text" id="passcode" class="keypad-input" placeholder="_____" maxlength="6" autocomplete="off" spellcheck="false">
+          </div>
+
+          <button class="master-btn" onclick="checkConsoleSolution()">ENGAGE OVERRIDE</button>
+          <div id="feedback" class="feedback-msg"></div>
+        `;
+        outputElem.appendChild(consoleElem);
+      } else {
+        printLine("Type 'HELP' for available directives.", "dim", 10);
+      }
     }
 
     function showDysenteryDeath() {
@@ -842,7 +1081,7 @@
       deathScreen.style.display = 'none';
       if (failCount >= 3) {
         showHintScreen();
-      } else if (gameState.currentNode === 6) {
+      } else {
         renderNodePage();
       }
     }
@@ -855,9 +1094,7 @@
     function dismissHintScreen() {
       hintScreen.style.display = 'none';
       failCount = 0;
-      if (gameState.currentNode === 6) {
-        renderNodePage();
-      }
+      renderNodePage();
     }
 
     function verifyAnswer(submittedText) {
@@ -872,7 +1109,7 @@
         failCount = 0;
         gameState.unlockedNodes.push(gameState.currentNode);
         
-        if (gameState.currentNode < 7) {
+        if (gameState.currentNode < 8) {
           if (gameState.currentNode === 5) {
             triggerGlitchSequence(() => {
               gameState.currentNode++;
@@ -884,11 +1121,6 @@
             updateStatusUI();
             renderNodePage();
           }
-        } else {
-          stopNode6Timers();
-          gameState.completed = true;
-          updateStatusUI();
-          renderNodePage();
         }
       } else {
         failCount++;
@@ -926,7 +1158,7 @@
 
         case 'STATUS':
           printLine(`OPERATIVE@GRID:> ${input}`, "user-input", 5);
-          printLine(`Current Node: ${gameState.currentNode} / 7`, "system", 10);
+          printLine(`Current Node: ${gameState.currentNode} / 8`, "system", 10);
           printLine(`Unlocked Nodes: ${gameState.unlockedNodes.join(', ') || 'None'}`, "dim", 10);
           break;
 
