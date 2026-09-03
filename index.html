@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>A.G.E.N.T. Terminal // DragonCon Grid</title>
   <style>
     :root {
@@ -20,13 +20,20 @@
       padding: 0;
     }
 
+    /* Lock body and HTML from scrolling completely */
     html, body {
       width: 100%;
       height: 100%;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      overflow: hidden;
       background-color: var(--bg-color);
       color: var(--term-green);
       font-family: var(--font-stack);
-      overflow: hidden;
+      touch-action: none;
     }
 
     body {
@@ -34,7 +41,6 @@
       justify-content: center;
       align-items: center;
       padding: 5px;
-      height: 100dvh; 
     }
 
     .terminal-container {
@@ -72,6 +78,7 @@
       gap: 6px;
       font-size: 0.85rem;
       line-height: 1.35;
+      touch-action: pan-y;
       -webkit-overflow-scrolling: touch;
     }
 
@@ -120,7 +127,7 @@
       outline: none;
       color: #ffffff;
       font-family: var(--font-stack);
-      font-size: 0.95rem;
+      font-size: 16px; /* 16px prevents iOS from auto-zooming on focus */
     }
 
     /* --- RETRO DYSENTERY DEATH OVERLAY --- */
@@ -141,7 +148,7 @@
       padding: 10px;
       font-family: "Courier New", Courier, monospace;
       animation: flashRed 0.4s ease-out;
-      overflow-y: auto;
+      overflow: hidden;
     }
 
     @keyframes flashRed {
@@ -152,7 +159,7 @@
     .tombstone {
       white-space: pre;
       color: #ffffff;
-      font-size: 0.55rem; /* Scaled down slightly so entire tombstone fits above keyboard on smaller phones */
+      font-size: 0.5rem;
       line-height: 1.1;
       margin-bottom: 8px;
     }
@@ -188,7 +195,6 @@
       <input type="text" id="cmd-input" placeholder="Type command..." autocomplete="off" spellcheck="false" />
     </div>
 
-    <!-- DYSENTERY OVERLAY -->
     <div id="death-screen" onclick="dismissDeathScreen()">
       <div class="tombstone">
        /-------------------\
@@ -253,24 +259,23 @@
     let printQueue = [];
     let isTyping = false;
 
-    function adjustForMobileKeyboard() {
-      if (window.visualViewport) {
-        document.body.style.height = `${window.visualViewport.height}px`;
-        outputElem.scrollTop = outputElem.scrollHeight;
-      }
+    // --- AGGRESIVE IOS SCROLL LOCK ---
+    function lockScroll() {
+      window.scrollTo(0, 0);
+      document.body.scrollTop = 0;
     }
 
+    window.addEventListener('scroll', lockScroll);
+    
+    // Dynamically size container to visual viewport when keyboard opens
     if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', adjustForMobileKeyboard);
-      window.visualViewport.addEventListener('scroll', adjustForMobileKeyboard);
-    }
-
-    inputElem.addEventListener('focus', () => {
-      setTimeout(() => {
-        adjustForMobileKeyboard();
+      window.visualViewport.addEventListener('resize', () => {
+        const container = document.getElementById('terminal-container');
+        container.style.height = `${window.visualViewport.height - 10}px`;
+        lockScroll();
         outputElem.scrollTop = outputElem.scrollHeight;
-      }, 300);
-    });
+      });
+    }
 
     function printLine(text, classType = 'system', speed = 12) {
       printQueue.push({ text, classType, speed });
@@ -342,21 +347,9 @@
     }
 
     function showDysenteryDeath() {
-      // 1. Unfocus input to trigger iOS to close keyboard
       inputElem.blur();
-
-      // 2. Display screen
       deathScreen.style.display = 'flex';
-
-      // 3. Reset scroll offsets on screen and death screen container
-      window.scrollTo(0, 0);
-      deathScreen.scrollTop = 0;
-
-      // 4. Force viewport update after keyboard dismisses
-      setTimeout(() => {
-        adjustForMobileKeyboard();
-        deathScreen.scrollTop = 0;
-      }, 100);
+      lockScroll();
     }
 
     function dismissDeathScreen() {
