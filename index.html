@@ -116,11 +116,12 @@
 
     .corrupted-text {
       color: var(--term-alert);
-      font-size: 1.2rem;
+      font-size: 1.1rem;
       font-weight: bold;
-      letter-spacing: 4px;
+      letter-spacing: 3px;
       text-align: center;
       margin-top: 4px;
+      word-break: break-all;
     }
 
     .stabilized-box {
@@ -132,7 +133,7 @@
       color: var(--term-warn) !important;
     }
 
-    /* GLITCH OVERLAY */
+    /* MODERATE WARNING OVERLAY (REPLACES AGGRESIVE GLITCH) */
     #glitch-overlay {
       display: none;
       position: absolute;
@@ -140,34 +141,43 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background-color: #ff0000;
-      color: #ffffff;
+      background-color: #080202;
+      color: var(--term-alert);
       z-index: 200;
       flex-direction: column;
       justify-content: center;
       align-items: center;
       text-align: center;
-      padding: 15px;
+      padding: 20px;
       font-family: var(--font-stack);
-      animation: crazyGlitch 0.15s infinite;
+      border: 4px dashed var(--term-alert);
     }
 
-    @keyframes crazyGlitch {
-      0% { background-color: #ff0000; transform: translate(0, 0) scale(1); filter: invert(0); }
-      20% { background-color: #000000; transform: translate(-3px, 2px) scale(1.01); filter: invert(0.8); }
-      40% { background-color: #ff3333; transform: translate(3px, -2px) scale(0.99); }
-      60% { background-color: #110000; transform: translate(-2px, -3px); filter: invert(0.5); }
-      80% { background-color: #ff0000; transform: translate(2px, 3px); }
-      100% { background-color: #000000; transform: translate(0, 0); }
+    .warning-icon {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+      animation: warningPulse 0.8s infinite alternate ease-in-out;
     }
 
-    .glitch-text {
-      font-size: 1.4rem;
+    .warning-title {
+      font-size: 1.2rem;
       font-weight: bold;
       text-transform: uppercase;
       letter-spacing: 2px;
-      color: #ffffff;
-      text-shadow: 2px 2px #000000;
+      color: var(--term-alert);
+      margin-bottom: 10px;
+      animation: warningPulse 0.8s infinite alternate ease-in-out;
+    }
+
+    .warning-details {
+      font-size: 0.85rem;
+      color: var(--term-warn);
+      letter-spacing: 1px;
+    }
+
+    @keyframes warningPulse {
+      0% { opacity: 0.3; transform: scale(0.96); }
+      100% { opacity: 1; transform: scale(1.04); }
     }
 
     /* INPUT LINE DIRECTLY BELOW TERMINAL TEXT */
@@ -358,11 +368,12 @@
       </div>
     </div>
 
-    <!-- GLITCH OVERLAY -->
+    <!-- WARNING SCREEN OVERLAY -->
     <div id="glitch-overlay">
-      <div class="glitch-text">⚠️ CRITICAL SYSTEM FAILURE ⚠️</div>
-      <div style="margin-top: 10px; font-size: 0.85rem;">CORRUPTION BREACH DETECTED IN NODE 6</div>
-      <div style="margin-top: 5px; font-size: 0.75rem; color: #ffaaaa;">SIGNAL DEGRADING... INITIATING EMERGENCY DECRYPTION</div>
+      <div class="warning-icon">⚠️  ⚠️  ⚠️</div>
+      <div class="warning-title">CRITICAL SYSTEM FAILURE</div>
+      <div class="warning-details">CORRUPTION BREACH DETECTED IN NODE 6</div>
+      <div class="warning-details" style="margin-top: 8px; color: #ff8888;">INITIATING EMERGENCY DECRYPTION PROTOCOL...</div>
     </div>
 
     <!-- DEATH OVERLAY -->
@@ -451,15 +462,17 @@
       completed: false
     };
 
-    let failCount = 0; // Tracks failed attempts per node
+    let failCount = 0;
 
-    // Node 6 Decay Timer State
+    // Node 6 Hardcore Decay Timer State
     let node6Timer = null;
-    let node6TimeLeft = 30;
+    let node6ScrambleFastInterval = null;
+    let node6TimeLeft = 15;
     let node6CorruptionLevel = 0;
     let node6IsStabilized = false;
     let node6StabilizeTimer = null;
-    const scrambleChars = "!@#$%^&*()_+-=[]{}|;:,.<>?/0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    let node6FlashFinished = false;
+    const scrambleChars = "!@#$%^&*()_+-=[]{}|;:,.<>?/0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZæøå#&§";
 
     try {
       localStorage.removeItem('dragoncon_arg_state');
@@ -487,7 +500,7 @@
         location: "TEETH",
         briefing: "TEETH TEETH TEETH TEETH",
         solution: "ICE",
-        hint: "ON",
+        hint: "ON...",
         successText: "EXOPLANET FORCE FIELD DEACTIVATED. Node 3 online."
       },
       4: {
@@ -495,12 +508,12 @@
         location: "MAINFRAME CORE",
         briefing: "Here comes the good part",
         solution: "2:31",
-        hint: "pause",
+        hint: "PAUSE...Eric will know",
         successText: "Node 4 online. Proceeding to next security gate..."
       },
       5: {
         title: "NODE 5: FINANCIAL OUTLET",
-        location: "VAULT PROTOCOL",
+        location: "MONEY PROTOCOL",
         briefing: "  /-------------\\\n /   (_______)   \\\n|  /             \\  |\n| |   $ $ $ $ $   | |\n| |  ___________  | |\n| | |           | | |\n|_|_|___________|_|_|",
         solution: "GOTTA MAKE THAT MONEY MAKE PURSE",
         hint: "What do you have to do to make that money?",
@@ -509,9 +522,9 @@
       6: {
         title: "NODE 6: CORRUPTED SIGNAL DECRYPTION",
         location: "EMERGENCY BUFFER",
-        briefing: "CRITICAL ALERT: Data payload is degrading in real time! Type 'STABILIZE' to freeze corruption for 8s.",
-        solution: "TAEMIN",
-        hint: "Think iconic SHINee soloist!",
+        briefing: "CRITICAL ALERT: Data payload degrading at extreme speeds! Type 'STABILIZE' to pause corruption for 3s.",
+        solution: "TAEMIN IS THE ANSWER",
+        hint: "Who is the ultimate answer?",
         successText: "ALL SYSTEMS ONLINE. MAINFRAME FULLY RESTORED!"
       }
     };
@@ -631,7 +644,6 @@
     function triggerGlitchSequence(callback) {
       glitchOverlay.style.display = 'flex';
       
-      // Glitch duration 2.5 seconds
       setTimeout(() => {
         glitchOverlay.style.display = 'none';
         if (callback) callback();
@@ -640,8 +652,10 @@
 
     function getScrambledText() {
       if (node6IsStabilized) return NODES[6].solution;
+      if (!node6FlashFinished) return NODES[6].solution;
 
       return NODES[6].solution.split('').map(char => {
+        if (char === ' ') return ' ';
         return Math.random() < node6CorruptionLevel 
           ? scrambleChars[Math.floor(Math.random() * scrambleChars.length)]
           : char;
@@ -650,20 +664,32 @@
 
     function startNode6DecayTimer() {
       stopNode6Timers();
-      node6TimeLeft = 30;
-      node6CorruptionLevel = 0;
+      node6TimeLeft = 15;
+      node6CorruptionLevel = 0.15;
       node6IsStabilized = false;
+      node6FlashFinished = false;
+
+      const scrambleTextElem = document.getElementById('node6-payload');
+      const timerTextElem = document.getElementById('node6-timer');
+
+      if (scrambleTextElem) scrambleTextElem.textContent = NODES[6].solution;
+
+      setTimeout(() => {
+        node6FlashFinished = true;
+      }, 1000);
+
+      node6ScrambleFastInterval = setInterval(() => {
+        if (scrambleTextElem) {
+          scrambleTextElem.textContent = getScrambledText();
+        }
+      }, 100);
 
       node6Timer = setInterval(() => {
-        if (!node6IsStabilized) {
+        if (node6FlashFinished && !node6IsStabilized) {
           node6TimeLeft--;
-          node6CorruptionLevel = Math.min(1, (30 - node6TimeLeft) / 20);
+          node6CorruptionLevel = Math.min(1, (15 - node6TimeLeft) / 8);
         }
 
-        const scrambleTextElem = document.getElementById('node6-payload');
-        const timerTextElem = document.getElementById('node6-timer');
-
-        if (scrambleTextElem) scrambleTextElem.textContent = getScrambledText();
         if (timerTextElem) timerTextElem.textContent = `TIME REMAINING: ${node6TimeLeft}s`;
 
         if (node6TimeLeft <= 0) {
@@ -675,6 +701,7 @@
 
     function stopNode6Timers() {
       if (node6Timer) clearInterval(node6Timer);
+      if (node6ScrambleFastInterval) clearInterval(node6ScrambleFastInterval);
       if (node6StabilizeTimer) clearTimeout(node6StabilizeTimer);
     }
 
@@ -691,14 +718,14 @@
         payload.textContent = NODES[6].solution;
       }
 
-      printLine("[SYSTEM]: SIGNAL STABILIZED FOR 8 SECONDS.", "warn", 5);
+      printLine("[SYSTEM]: SIGNAL STABILIZED FOR 3 SECONDS.", "warn", 5);
 
       node6StabilizeTimer = setTimeout(() => {
         node6IsStabilized = false;
         if (box) box.classList.remove('stabilized-box');
         if (payload) payload.classList.remove('stabilized-text');
-        printLine("[ALERT]: STABILIZATION EXPIRED! DEGRADATION RESUMING...", "alert", 5);
-      }, 8000);
+        printLine("[ALERT]: STABILIZATION EXPIRED! HIGH DEGRADATION RESUMING...", "alert", 5);
+      }, 3000);
     }
 
     function renderNodePage() {
@@ -719,13 +746,12 @@
       printLine(`LOCATION TARGET: ${activeNode.location}`, "dim", 10);
       printLine(`DIRECTIVE:\n${activeNode.briefing}\n`, "system", 10);
 
-      // Render Decryption Puzzle Box for Node 6
       if (gameState.currentNode === 6) {
         const scrambleContainer = document.createElement('div');
         scrambleContainer.className = 'scramble-box';
         scrambleContainer.id = 'node6-box';
         scrambleContainer.innerHTML = `
-          <div style="font-size: 0.8rem; color: var(--term-warn);" id="node6-timer">TIME REMAINING: 30s</div>
+          <div style="font-size: 0.8rem; color: var(--term-warn);" id="node6-timer">TIME REMAINING: 15s</div>
           <div class="corrupted-text" id="node6-payload">${NODES[6].solution}</div>
         `;
         outputElem.appendChild(scrambleContainer);
@@ -745,7 +771,7 @@
       if (failCount >= 5) {
         showHintScreen();
       } else if (gameState.currentNode === 6) {
-        renderNodePage(); // Restart decay puzzle timer on death clear
+        renderNodePage();
       }
     }
 
@@ -756,7 +782,7 @@
 
     function dismissHintScreen() {
       hintScreen.style.display = 'none';
-      failCount = 0; // Reset counter after hint is viewed
+      failCount = 0;
       if (gameState.currentNode === 6) {
         renderNodePage();
       }
@@ -771,12 +797,11 @@
       const cleanSubmission = submittedText.trim().toUpperCase();
 
       if (cleanSubmission === currentNodeData.solution) {
-        failCount = 0; // Reset counter on correct answer
+        failCount = 0;
         gameState.unlockedNodes.push(gameState.currentNode);
         
         if (gameState.currentNode < 6) {
           if (gameState.currentNode === 5) {
-            // Flash red glitch sequence after Node 5
             triggerGlitchSequence(() => {
               gameState.currentNode++;
               updateStatusUI();
@@ -807,7 +832,6 @@
       const cmd = parts[0].toUpperCase();
       const arg = parts.slice(1).join(' ').trim();
 
-      // Node 6 specific keyword: STABILIZE
       if (gameState.currentNode === 6 && (cmd === 'STABILIZE' || cmd === 'STAB')) {
         printLine(`OPERATIVE@GRID:> ${input}`, "user-input", 5);
         triggerNode6Stabilize();
@@ -824,7 +848,7 @@
           printLine("  CLEAR           - Clear display screen.", "dim", 8);
           printLine("  RESET           - Reset game save data.", "dim", 8);
           if (gameState.currentNode === 6) {
-            printLine("  STABILIZE       - Pause decryption decay for 8s.", "warn", 8);
+            printLine("  STABILIZE       - Pause decryption decay for 3s.", "warn", 8);
           }
           break;
 
@@ -871,4 +895,3 @@
   </script>
 </body>
 </html>
- 
