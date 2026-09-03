@@ -115,6 +115,54 @@
       font-family: var(--font-stack);
       font-size: 1rem;
     }
+
+    /* --- RETRO DYSENTERY DEATH OVERLAY --- */
+    #death-screen {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #000000;
+      color: #ffffff;
+      z-index: 100;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 20px;
+      font-family: "Courier New", Courier, monospace;
+      animation: flashRed 0.4s ease-out;
+    }
+
+    @keyframes flashRed {
+      0% { background-color: #ff0000; }
+      100% { background-color: #000000; }
+    }
+
+    .tombstone {
+      white-space: pre;
+      color: #ffffff;
+      font-size: 0.75rem;
+      line-height: 1.1;
+      margin-bottom: 20px;
+    }
+
+    .death-text {
+      color: #ff3333;
+      font-size: 1.2rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 15px;
+    }
+
+    .retry-prompt {
+      color: #888888;
+      font-size: 0.85rem;
+      animation: blink 1s infinite;
+    }
   </style>
 </head>
 <body>
@@ -131,6 +179,24 @@
       <span class="prompt">OPERATIVE@GRID:&gt;</span>
       <input type="text" id="cmd-input" placeholder="Type command..." autocomplete="off" spellcheck="false" />
     </div>
+
+    <!-- DYSENTERY OVERLAY -->
+    <div id="death-screen" onclick="dismissDeathScreen()">
+      <div class="tombstone">
+       /-------------------\
+      /     R. I. P.        \
+     /                       \
+    |   HERE LIES AN OPERATIVE|
+    |                         |
+    |   DIED OF DYSENTERY     |
+    |                         |
+    |    ON THE TRAIL TO      |
+    |       DRAGONCON         |
+    |_________________________|
+      </div>
+      <div class="death-text">YOU HAVE DIED OF DYSENTERY.</div>
+      <div class="retry-prompt">[ TAP SCREEN OR PRESS ENTER TO RETRY ]</div>
+    </div>
   </div>
 
   <script>
@@ -140,9 +206,9 @@
       completed: false
     };
 
+    // Always reset session on load so game starts fresh at Node 1
     try {
-      const saved = localStorage.getItem('dragoncon_arg_state');
-      if (saved) gameState = JSON.parse(saved);
+      localStorage.removeItem('dragoncon_arg_state');
     } catch(e) {}
 
     const NODES = {
@@ -175,8 +241,8 @@
     const outputElem = document.getElementById('terminal-body');
     const inputElem = document.getElementById('cmd-input');
     const statusElem = document.getElementById('node-status');
+    const deathScreen = document.getElementById('death-screen');
 
-    // --- TYPEWRITER QUEUE ENGINE ---
     let printQueue = [];
     let isTyping = false;
 
@@ -222,37 +288,40 @@
       } else {
         statusElem.textContent = `NODE ${gameState.currentNode}/3 ACTIVE`;
       }
-      try {
-        localStorage.setItem('dragoncon_arg_state', JSON.stringify(gameState));
-      } catch(e) {}
     }
 
-    function renderNodeBriefing() {
+    function clearScreen() {
+      outputElem.innerHTML = '';
+      printQueue = [];
+      isTyping = false;
+    }
+
+    function renderNodePage() {
+      clearScreen();
+      
       if (gameState.completed) {
         printLine("==================================================", "system", 5);
-        printLine("MISSION COMPLETE. All systems restored.", "system", 15);
+        printLine("MISSION COMPLETE. ALL MAINFRAME NODES SECURED.", "system", 15);
         printLine("==================================================", "system", 5);
         return;
       }
 
       const activeNode = NODES[gameState.currentNode];
-      printLine(`--- [ CURRENT OBJECTIVE: ${activeNode.title} ] ---`, "warn", 10);
+      printLine(`==================================================`, "system", 5);
+      printLine(`  ${activeNode.title.toUpperCase()}`, "warn", 10);
+      printLine(`==================================================`, "system", 5);
       printLine(`LOCATION TARGET: ${activeNode.location}`, "dim", 10);
-      printLine(`DIRECTIVE: ${activeNode.briefing}`, "system", 12);
+      printLine(`DIRECTIVE: ${activeNode.briefing}\n`, "system", 12);
+      printLine("Type 'HELP' for available directives.", "dim", 10);
     }
 
-    function initTerminal() {
-      outputElem.innerHTML = '';
-      printQueue = [];
-      isTyping = false;
-      printLine("==================================================", "system", 5);
-      printLine("   WELCOME TO YOUR DRAGONCON PUZZLE CHALLENGE", "warn", 10);
-      printLine("==================================================", "system", 5);
-      printLine("INITIALIZING TERMINAL v2.6...", "dim", 10);
-      printLine("LINK ESTABLISHED.", "system", 10);
-      printLine("Type 'HELP' for available directives.\n", "system", 10);
-      updateStatusUI();
-      renderNodeBriefing();
+    function showDysenteryDeath() {
+      deathScreen.style.display = 'flex';
+    }
+
+    function dismissDeathScreen() {
+      deathScreen.style.display = 'none';
+      inputElem.focus();
     }
 
     function verifyAnswer(submittedText) {
@@ -263,25 +332,30 @@
 
       const currentNodeData = NODES[gameState.currentNode];
       if (submittedText === currentNodeData.solution) {
-        printLine(currentNodeData.successText, "system", 15);
-        
         gameState.unlockedNodes.push(gameState.currentNode);
         
         if (gameState.currentNode < 3) {
           gameState.currentNode++;
           updateStatusUI();
-          renderNodeBriefing();
+          // Render next puzzle on a brand-new page
+          renderNodePage();
         } else {
           gameState.completed = true;
           updateStatusUI();
-          renderNodeBriefing();
+          renderNodePage();
         }
       } else {
-        printLine("ACCESS DENIED. Invalid credential token submitted.", "alert", 15);
+        // Trigger retro death animation on wrong answer
+        showDysenteryDeath();
       }
     }
 
     function processCommand(rawInput) {
+      if (deathScreen.style.display === 'flex') {
+        dismissDeathScreen();
+        return;
+      }
+
       const input = rawInput.trim();
       if (!input) return;
 
@@ -295,7 +369,7 @@
         case 'HELP':
           printLine("AVAILABLE COMMANDS:", "system", 10);
           printLine("  STATUS          - Display overall progress.", "dim", 8);
-          printLine("  BRIEF           - Show current objective.", "dim", 8);
+          printLine("  BRIEF           - Reload current objective page.", "dim", 8);
           printLine("  HINT            - Request tactical hint.", "dim", 8);
           printLine("  UNLOCK [CODE]   - Submit node credential.", "dim", 8);
           printLine("  OVERRIDE [CODE] - Submit node 3 override.", "dim", 8);
@@ -309,7 +383,7 @@
           break;
 
         case 'BRIEF':
-          renderNodeBriefing();
+          renderNodePage();
           break;
 
         case 'HINT':
@@ -322,13 +396,13 @@
           break;
 
         case 'CLEAR':
-          outputElem.innerHTML = '';
+          clearScreen();
           break;
 
         case 'RESET':
-          try { localStorage.removeItem('dragoncon_arg_state'); } catch(e) {}
           gameState = { currentNode: 1, unlockedNodes: [], completed: false };
-          initTerminal();
+          updateStatusUI();
+          renderNodePage();
           break;
 
         default:
@@ -336,7 +410,7 @@
           if (cmd === currentSolution || input.toUpperCase() === currentSolution) {
             verifyAnswer(currentSolution);
           } else {
-            printLine(`Unknown command: '${cmd}'. Type 'HELP' for commands.`, "alert", 10);
+            verifyAnswer(input.toUpperCase());
           }
           break;
       }
@@ -344,12 +418,18 @@
 
     inputElem.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
-        processCommand(inputElem.value);
-        inputElem.value = '';
+        if (deathScreen.style.display === 'flex') {
+          dismissDeathScreen();
+        } else {
+          processCommand(inputElem.value);
+          inputElem.value = '';
+        }
       }
     });
 
-    initTerminal();
+    // Start directly on Node 1 Page
+    updateStatusUI();
+    renderNodePage();
   </script>
 </body>
-</html> 
+</html>
