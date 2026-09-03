@@ -414,6 +414,14 @@
         briefing: "Here comes the good part",
         solution: "2:31",
         hint: "pause",
+        successText: "Node 4 online. Proceeding to final security gate..."
+      },
+      5: {
+        title: "NODE 5: FINANCIAL OUTLET",
+        location: "VAULT PROTOCOL",
+        briefing: "  /-------------\\\n /   (_______)   \\\n|  /             \\  |\n| |   $ $ $ $ $   | |\n| |  ___________  | |\n| | |           | | |\n|_|_|___________|_|_|",
+        solution: "GOTTA MAKE THAT MONEY MAKE PURSE",
+        hint: "What do you have to do to make that money?",
         successText: "ALL SYSTEMS ONLINE. MAINFRAME FULLY RESTORED!"
       }
     };
@@ -443,7 +451,7 @@
       if (char === 'BACK') {
         currentInput = currentInput.slice(0, -1);
       } else {
-        if (currentInput.length < 30) {
+        if (currentInput.length < 50) {
           currentInput += char;
         }
       }
@@ -519,7 +527,7 @@
       if (gameState.completed) {
         statusElem.textContent = "STATUS: SECURED";
       } else {
-        statusElem.textContent = `NODE ${gameState.currentNode}/4 ACTIVE`;
+        statusElem.textContent = `NODE ${gameState.currentNode}/5 ACTIVE`;
       }
     }
 
@@ -544,7 +552,7 @@
       printLine(`  ${activeNode.title.toUpperCase()}`, "warn", 10);
       printLine(`==================================================`, "system", 5);
       printLine(`LOCATION TARGET: ${activeNode.location}`, "dim", 10);
-      printLine(`DIRECTIVE: ${activeNode.briefing}\n`, "system", 10);
+      printLine(`DIRECTIVE:\n${activeNode.briefing}\n`, "system", 10);
       printLine("Type 'HELP' for available directives.", "dim", 10);
     }
 
@@ -581,7 +589,7 @@
         failCount = 0; // Reset counter on correct answer
         gameState.unlockedNodes.push(gameState.currentNode);
         
-        if (gameState.currentNode < 4) {
+        if (gameState.currentNode < 5) {
           gameState.currentNode++;
           updateStatusUI();
           renderNodePage();
@@ -617,7 +625,7 @@
 
         case 'STATUS':
           printLine(`OPERATIVE@GRID:> ${input}`, "user-input", 5);
-          printLine(`Current Node: ${gameState.currentNode} / 4`, "system", 10);
+          printLine(`Current Node: ${gameState.currentNode} / 5`, "system", 10);
           printLine(`Unlocked Nodes: ${gameState.unlockedNodes.join(', ') || 'None'}`, "dim", 10);
           break;
 
