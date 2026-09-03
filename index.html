@@ -206,7 +206,6 @@
       completed: false
     };
 
-    // Always reset session on load so game starts fresh at Node 1
     try {
       localStorage.removeItem('dragoncon_arg_state');
     } catch(e) {}
@@ -326,18 +325,18 @@
 
     function verifyAnswer(submittedText) {
       if (gameState.completed) {
-        printLine("All nodes are already unlocked.", "warn", 15);
         return;
       }
 
       const currentNodeData = NODES[gameState.currentNode];
-      if (submittedText === currentNodeData.solution) {
+      const cleanSubmission = submittedText.trim().toUpperCase();
+
+      if (cleanSubmission === currentNodeData.solution) {
         gameState.unlockedNodes.push(gameState.currentNode);
         
         if (gameState.currentNode < 3) {
           gameState.currentNode++;
           updateStatusUI();
-          // Render next puzzle on a brand-new page
           renderNodePage();
         } else {
           gameState.completed = true;
@@ -345,7 +344,6 @@
           renderNodePage();
         }
       } else {
-        // Trigger retro death animation on wrong answer
         showDysenteryDeath();
       }
     }
@@ -359,25 +357,24 @@
       const input = rawInput.trim();
       if (!input) return;
 
-      printLine(`OPERATIVE@GRID:> ${input}`, "user-input", 5);
-
       const parts = input.split(' ');
       const cmd = parts[0].toUpperCase();
-      const arg = parts.slice(1).join(' ').toUpperCase();
+      const arg = parts.slice(1).join(' ').trim();
 
+      // System navigation commands
       switch (cmd) {
         case 'HELP':
+          printLine(`OPERATIVE@GRID:> ${input}`, "user-input", 5);
           printLine("AVAILABLE COMMANDS:", "system", 10);
           printLine("  STATUS          - Display overall progress.", "dim", 8);
           printLine("  BRIEF           - Reload current objective page.", "dim", 8);
           printLine("  HINT            - Request tactical hint.", "dim", 8);
-          printLine("  UNLOCK [CODE]   - Submit node credential.", "dim", 8);
-          printLine("  OVERRIDE [CODE] - Submit node 3 override.", "dim", 8);
           printLine("  CLEAR           - Clear display screen.", "dim", 8);
           printLine("  RESET           - Reset game save data.", "dim", 8);
           break;
 
         case 'STATUS':
+          printLine(`OPERATIVE@GRID:> ${input}`, "user-input", 5);
           printLine(`Current Node: ${gameState.currentNode} / 3`, "system", 10);
           printLine(`Unlocked Nodes: ${gameState.unlockedNodes.join(', ') || 'None'}`, "dim", 10);
           break;
@@ -387,12 +384,8 @@
           break;
 
         case 'HINT':
+          printLine(`OPERATIVE@GRID:> ${input}`, "user-input", 5);
           printLine(`[HANDLER HINT]: ${NODES[gameState.currentNode].hint}`, "warn", 12);
-          break;
-
-        case 'UNLOCK':
-        case 'OVERRIDE':
-          verifyAnswer(arg);
           break;
 
         case 'CLEAR':
@@ -405,13 +398,14 @@
           renderNodePage();
           break;
 
+        case 'UNLOCK':
+        case 'OVERRIDE':
+          verifyAnswer(arg);
+          break;
+
         default:
-          const currentSolution = NODES[gameState.currentNode].solution;
-          if (cmd === currentSolution || input.toUpperCase() === currentSolution) {
-            verifyAnswer(currentSolution);
-          } else {
-            verifyAnswer(input.toUpperCase());
-          }
+          // Any other input is treated directly as a puzzle answer attempt
+          verifyAnswer(input);
           break;
       }
     }
@@ -427,7 +421,6 @@
       }
     });
 
-    // Start directly on Node 1 Page
     updateStatusUI();
     renderNodePage();
   </script>
