@@ -123,7 +123,6 @@
   </div>
 
   <script>
-    // --- SAFE MOBILE AUDIO INITIALIZATION ---
     let audioCtx = null;
     
     function enableAudio() {
@@ -151,15 +150,12 @@
         gain.connect(audioCtx.destination);
         osc.start();
         osc.stop(audioCtx.currentTime + duration);
-      } catch (e) {
-        // Ignore audio failures on unsupported hardware
-      }
+      } catch (e) {}
     }
 
     document.addEventListener('touchstart', enableAudio, { once: true });
     document.addEventListener('click', enableAudio, { once: true });
 
-    // --- GAME STATE & DATABASE ---
     let gameState = {
       currentNode: 1,
       unlockedNodes: [],
@@ -198,12 +194,10 @@
       }
     };
 
-    // --- DOM ELEMENTS ---
     const outputElem = document.getElementById('terminal-body');
     const inputElem = document.getElementById('cmd-input');
     const statusElem = document.getElementById('node-status');
 
-    // --- ROBUST PRINT ENGINE ---
     function printLine(text, classType = 'system') {
       const line = document.createElement('div');
       line.className = `line ${classType}`;
@@ -346,7 +340,6 @@
       }
     });
 
-    // Run initialization
     initTerminal();
   </script>
 </body>
