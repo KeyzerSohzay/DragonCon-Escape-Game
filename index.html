@@ -123,39 +123,6 @@
   </div>
 
   <script>
-    let audioCtx = null;
-    
-    function enableAudio() {
-      if (!audioCtx) {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        if (AudioContext) {
-          audioCtx = new AudioContext();
-        }
-      }
-      if (audioCtx && audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
-    }
-
-    function playSound(freq, type, duration) {
-      if (!audioCtx || audioCtx.state !== 'running') return;
-      try {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = type;
-        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.02, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + duration);
-      } catch (e) {}
-    }
-
-    document.addEventListener('touchstart', enableAudio, { once: true });
-    document.addEventListener('click', enableAudio, { once: true });
-
     let gameState = {
       currentNode: 1,
       unlockedNodes: [],
@@ -251,7 +218,6 @@
 
       const currentNodeData = NODES[gameState.currentNode];
       if (submittedText === currentNodeData.solution) {
-        playSound(800, 'sine', 0.1);
         printLine(currentNodeData.successText, "system");
         
         gameState.unlockedNodes.push(gameState.currentNode);
@@ -266,7 +232,6 @@
           renderNodeBriefing();
         }
       } else {
-        playSound(200, 'sawtooth', 0.2);
         printLine("ACCESS DENIED. Invalid credential token submitted.", "alert");
       }
     }
@@ -276,7 +241,6 @@
       if (!input) return;
 
       printLine(`OPERATIVE@GRID:> ${input}`, "user-input");
-      playSound(600, 'square', 0.03);
 
       const parts = input.split(' ');
       const cmd = parts[0].toUpperCase();
