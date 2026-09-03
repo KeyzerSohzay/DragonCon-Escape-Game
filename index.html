@@ -259,6 +259,14 @@
       accent-color: #00ffcc;
     }
 
+    /* KEYPAD INPUT & FLASHING CURSOR */
+    .keypad-container {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
     .keypad-input {
       width: 100%;
       background: #0b0f19;
@@ -272,6 +280,16 @@
       border-radius: 6px;
       text-transform: uppercase;
       font-family: inherit;
+    }
+
+    .keypad-cursor {
+      display: inline-block;
+      width: 8px;
+      height: 1.2rem;
+      background-color: #00ffcc;
+      margin-left: 2px;
+      animation: blink 0.8s infinite;
+      vertical-align: middle;
     }
 
     .master-btn {
@@ -306,9 +324,16 @@
     .status-success { color: #00ffcc; }
     .status-error { color: #ff4d4d; }
 
-    /* TAP CONTINUE PROMPT AT BOTTOM */
+    /* BRIEFING PAGE LAYOUT & DELAY PROMPT */
+    .briefing-container {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      justify-content: space-between;
+    }
+
     .tap-continue-prompt {
-      margin-top: auto;
+      margin-top: 25px;
       text-align: center;
       color: var(--term-warn);
       font-size: 0.95rem;
@@ -328,19 +353,38 @@
       pointer-events: auto;
     }
 
-    /* RED COMPLETION TEXT */
-    .final-complete-message {
-      color: var(--term-alert);
-      font-size: 1.4rem;
-      font-weight: bold;
+    /* FINAL COMPLETION PAGE STYLES */
+    .final-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 10px;
       text-align: center;
-      margin: 30px auto;
-      letter-spacing: 2px;
-      text-shadow: 0 0 10px rgba(255, 51, 51, 0.7);
-      line-height: 1.5;
+      gap: 15px;
     }
 
-    /* WARNING OVERLAY */
+    .final-animation-gif {
+      max-width: 85%;
+      max-height: 220px;
+      border: 2px solid var(--term-green);
+      border-radius: 8px;
+      box-shadow: 0 0 15px rgba(0, 255, 102, 0.3);
+      object-fit: contain;
+    }
+
+    .final-complete-message {
+      color: var(--term-alert);
+      font-size: 1.2rem;
+      font-weight: bold;
+      text-align: center;
+      letter-spacing: 1.5px;
+      text-shadow: 0 0 10px rgba(255, 51, 51, 0.7);
+      line-height: 1.6;
+      white-space: pre-line;
+    }
+
+    /* WARNING OVERLAY WITH COUNTDOWN */
     #glitch-overlay {
       display: none;
       position: absolute;
@@ -380,6 +424,15 @@
       font-size: 0.85rem;
       color: var(--term-warn);
       letter-spacing: 1px;
+    }
+
+    .glitch-timer {
+      font-size: 1.8rem;
+      font-weight: bold;
+      color: var(--term-alert);
+      margin-top: 15px;
+      letter-spacing: 2px;
+      text-shadow: 0 0 10px rgba(255, 51, 51, 0.8);
     }
 
     @keyframes warningPulse {
@@ -575,15 +628,14 @@
       </div>
     </div>
 
-    <!-- WARNING SCREEN OVERLAY -->
     <div id="glitch-overlay">
       <div class="warning-icon">⚠️  ⚠️  ⚠️</div>
       <div class="warning-title">CRITICAL SYSTEM FAILURE</div>
       <div class="warning-details">CORRUPTION BREACH DETECTED IN NODE 6</div>
       <div class="warning-details" style="margin-top: 8px; color: #ff8888;">INITIATING EMERGENCY DECRYPTION PROTOCOL...</div>
+      <div class="glitch-timer" id="glitch-countdown">SYSTEM PURGE IN: 10s</div>
     </div>
 
-    <!-- DEATH OVERLAY -->
     <div id="death-screen" onclick="dismissDeathScreen()">
       <div class="tombstone">
        /-------------------\
@@ -601,7 +653,6 @@
       <div class="retry-prompt">[ TAP SCREEN TO RETRY ]</div>
     </div>
 
-    <!-- HINT OVERLAY -->
     <div id="hint-screen" onclick="dismissHintScreen()">
       <div class="hint-title">⚠️ SYSTEM TACTICAL HINT ⚠️</div>
       <div class="hint-body" id="hint-text"></div>
@@ -762,6 +813,7 @@
     const hintScreen = document.getElementById('hint-screen');
     const hintTextElem = document.getElementById('hint-text');
     const glitchOverlay = document.getElementById('glitch-overlay');
+    const glitchCountdown = document.getElementById('glitch-countdown');
     const inputLineContainer = document.getElementById('input-line-container');
     const keyboardContainer = document.getElementById('keyboard-container');
 
@@ -887,8 +939,18 @@
 
     function triggerGlitchSequence(callback) {
       glitchOverlay.style.display = 'flex';
-      
+      let timer = 10;
+      glitchCountdown.textContent = `SYSTEM PURGE IN: ${timer}s`;
+
+      const countdownInterval = setInterval(() => {
+        timer--;
+        if (timer >= 0) {
+          glitchCountdown.textContent = `SYSTEM PURGE IN: ${timer}s`;
+        }
+      }, 1000);
+
       setTimeout(() => {
+        clearInterval(countdownInterval);
         glitchOverlay.style.display = 'none';
         if (callback) callback();
       }, 10000);
@@ -1029,10 +1091,16 @@
         if (inputLineContainer) inputLineContainer.style.display = 'none';
         if (keyboardContainer) keyboardContainer.style.display = 'none';
 
-        const finalMsg = document.createElement('div');
-        finalMsg.className = 'final-complete-message';
-        finalMsg.innerHTML = 'Nodes complete… for now… stay tuned for more';
-        outputElem.appendChild(finalMsg);
+        const finalContainer = document.createElement('div');
+        finalContainer.className = 'final-container';
+        finalContainer.innerHTML = `
+          <img src="./my-animation.gif" alt="Completion Animation" class="final-animation-gif" />
+          <div class="final-complete-message">Nodes complete.
+Stay tuned for more…
+
+P.S. Have fun you guys!</div>
+        `;
+        outputElem.appendChild(finalContainer);
         
         terminalBody.scrollTop = terminalBody.scrollHeight;
         return;
@@ -1069,12 +1137,20 @@
       }
 
       if (gameState.currentNode === 8 && !gameState.node8BriefingSeen) {
-        printLine(`DIRECTIVE CLUES:\n1. Pinky\n2. It’s been how many years? Add zero\n3. It’s the whole theme\n`, "system", 10);
-
+        const briefingWrap = document.createElement('div');
+        briefingWrap.className = 'briefing-container';
+        
+        const cluesText = document.createElement('div');
+        cluesText.className = 'line system';
+        cluesText.innerHTML = `DIRECTIVE CLUES:<br>1. Pinky<br>2. It’s been how many years? Add zero<br>3. It’s the whole theme`;
+        
         const tapPrompt = document.createElement('div');
         tapPrompt.className = 'tap-continue-prompt';
         tapPrompt.innerText = '[ TAP ANYWHERE TO CONTINUE TO PUZZLE CONSOLE ]';
-        outputElem.appendChild(tapPrompt);
+        
+        briefingWrap.appendChild(cluesText);
+        briefingWrap.appendChild(tapPrompt);
+        outputElem.appendChild(briefingWrap);
 
         setTimeout(() => {
           tapPrompt.classList.add('visible');
@@ -1092,9 +1168,7 @@
 
       terminalContainer.onclick = null;
 
-      if (gameState.currentNode !== 8) {
-        printLine(`DIRECTIVE:\n${activeNode.briefing}\n`, "system", 10);
-      }
+      printLine(`DIRECTIVE:\n${activeNode.briefing}\n`, "system", 10);
 
       if (gameState.currentNode === 6) {
         const scrambleContainer = document.createElement('div');
@@ -1134,7 +1208,10 @@
 
           <div class="console-section">
             <span class="console-label">3. ENTER OVERRIDE KEYCODE</span>
-            <input type="text" id="passcode" class="keypad-input" placeholder="_____" maxlength="10" autocomplete="off" spellcheck="false" readonly>
+            <div class="keypad-container">
+              <input type="text" id="passcode" class="keypad-input" placeholder="_____" maxlength="10" autocomplete="off" spellcheck="false" readonly>
+              <span class="keypad-cursor"></span>
+            </div>
           </div>
 
           <button class="master-btn" onclick="checkConsoleSolution()">ENGAGE OVERRIDE</button>
