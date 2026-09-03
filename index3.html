@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>A.G.E.N.T. Terminal // DragonCon Grid</title>
+  <style>
+    :root {
+      --bg-color: #0d0f12;
+      --term-green: #00ff66;
+      --term-dim: #008837;
+      --term-alert: #ff3333;
+      --term-warn: #ffcc00;
+      --font-stack: "Courier New", Courier, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--term-green);
+      font-family: var(--font-stack);
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      padding: 10px;
+    }
+
+    .terminal-container {
+      width: 100%;
+      max-width: 800px;
+      height: 90vh;
+      background: #050709;
+      border: 2px solid var(--term-green);
+      box-shadow: 0 0 20px rgba(0, 255, 102, 0.2);
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .terminal-container::before {
+      content: " ";
+      display: block;
+      position: absolute;
+      top: 0; left: 0; bottom: 0; right: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+      background-size: 100% 4px;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .terminal-header {
+      background-color: rgba(0, 255, 102, 0.1);
+      border-bottom: 1px solid var(--term-green);
+      padding: 8px 12px;
+      font-size: 0.85rem;
+      display: flex;
+      justify-content: space-between;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .terminal-body {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-size: 0.95rem;
+      line-height: 1.4;
+    }
+
+    .line {
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .system { color: var(--term-green); }
+    .dim { color: var(--term-dim); }
+    .alert { color: var(--term-alert); font-weight: bold; }
+    .warn { color: var(--term-warn); }
+    .user-input { color: #ffffff; }
+
+    .typing::after {
+      content: '█';
+      animation: blink 0.8s infinite;
+      margin-left: 2px;
+    }
+
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0; }
+    }
+
+    .terminal-input-line {
+      display: flex;
+      align-items: center;
+      padding: 12px 15px;
+      border-top: 1px solid var(--term-dim);
+      background: #080a0d;
+    }
+
+    .prompt {
+      color: var(--term-green);
+      margin-right: 8px;
+      font-weight: bold;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #ffffff;
+      font-family: var(--font-stack);
+      font-size: 1rem;
+    }
+
+    .glitch {
+      animation: glitch 0.2s ease infinite alternate;
+    }
+
+    @keyframes glitch {
+      0% { transform: translate(0); }
+      20% { transform: translate(-2px, 2px); }
+      40% { transform: translate(-2px, -2px); }
+      60% { transform: translate(2px, 2px); }
+      80% { transform: translate(2px, -2px); }
+      100% { transform: translate(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="terminal-container">
+    <div class="terminal-header">
+      <span>SYS_NAME: DRAGON_NET_V2.6</span>
+      <span id="node-status">STATUS: INITIALIZING...</span>
+    </div>
+    
+    <div class="terminal-body" id="terminal-body"></div>
+
+    <div class="terminal-input-line">
+      <span class="prompt">OPERATIVE@GRID:&gt;</span>
+      <input type="text" id="cmd-input" placeholder="Type command..." autofocus autocomplete="off" />
+    </div>
+  </div>
+
+  <script>
+    /******************************************************************
+     * AUDIO ENGINE (WITH MOBILE AUTOPLAY FIX)
+     ******************************************************************/
+    let audioCtx = null;
+    
+    function initAudio() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) {
+          audioCtx = new AudioContextClass();
+        }
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function playBeep(freq = 800, type = 'sine', duration = 0.05) {
+      if (!audioCtx || audioCtx.state !== 'running') return;
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {
+        // Silently catch audio restrictions
+      }
+    }
+
+    function playKeyClick() {
+      const freq = 1200 + Math.random() * 400;
+      playBeep(freq, 'triangle', 0.015);
+    }
+
+    // Enable audio on first screen interaction
+    window.addEventListener('touchstart', initAudio, { once: true });
+    window.addEventListener('click', initAudio, { once: true });
+    window.addEventListener('keydown', initAudio, { once: true });
+
+    /******************************************************************
+     * PUZZLE DATABASE & STATE
+     ******************************************************************/
+    let gameState = JSON.parse(localStorage.getItem('dragoncon_arg_state')) || {
+      currentNode: 1,
+      unlockedNodes: [],
+      completed: false
+    };
+
+    const NODES = {
+      1: {
+        title: "NODE 1: Authentication Gate",
+        location: "Command Access",
+        briefing: "To enter the game, enter this word that Liam has everyone yell for the password… but is commonly misspelled.",
+        solution: "PINUS",
+        hint: "It's five letters, starts with P, ends with S... think pine tree genus spelling!",
+        successText: "ACCESS GRANTED. Passphrase verified. System authenticated!"
+      },
+      2: {
+        title: "NODE 2: KWANGYA SYNK Matrix",
+        location: "Flat / Wilderness Grid",
+        briefing: "SECURITY CHECK 2: Multiply the number of aespa members (4) by 2016 (SM Culture Tech unveiling). Add 23 (Atomic weight of Na for Naevis).\nTarget Format: UNLOCK [NUMBER]",
+        solution: "8087",
+        hint: "(4 * 2016) + 23.",
+        successText: "SYNK LEVEL 100%. NAEVIS LINK ESTABLISHED. Node 2 online."
+      },
+      3: {
+        title: "NODE 3: EXOPLANET Force Field",
+        location: "EXOPLANET Command Core",
+        briefing: "FINAL OVERRIDE: Add original EXO member count (12) to EXO-K debut year (2012), then subtract the total number of member superpowers (12).\nTarget Format: OVERRIDE [NUMBER]",
+        solution: "2012",
+        hint: "12 + 2012 - 12.",
+        successText: "EXOPLANET FORCE FIELD DEACTIVATED. MAINFRAME RESTORED!"
+      }
+    };
+
+    /******************************************************************
+     * TELETYPE TYPING ENGINE
+     ******************************************************************/
+    const outputElem = document.getElementById('terminal-body');
+    const inputElem = document.getElementById('cmd-input');
+    const statusElem = document.getElementById('node-status');
+    let printQueue = [];
+    let isTyping = false;
+
+    function printLine(text, classType = 'system', delay = 15) {
+      printQueue.push({ text, classType, delay });
+      if (!isTyping) {
+        processQueue();
+      }
+    }
+
+    function processQueue() {
+      if (printQueue.length === 0) {
+        isTyping = false;
+        return;
+      }
+
+      isTyping = true;
+      const { text, classType, delay } = printQueue.shift();
+      const line = document.createElement('div');
+      line.className = `line ${classType} typing`;
+      outputElem.appendChild(line);
+
+      let charIndex = 0;
+
+      function typeChar() {
+        if (charIndex < text.length) {
+          line.textContent += text.charAt(charIndex);
+          charIndex++;
+          outputElem.scrollTop = outputElem.scrollHeight;
+          if (Math.random() > 0.3) playKeyClick();
+          setTimeout(typeChar, delay);
+        } else {
+          line.classList.remove('typing');
+          setTimeout(processQueue, 50);
+        }
+      }
+
+      typeChar();
+    }
+
+    function updateStatusUI() {
+      if (gameState.completed) {
+        statusElem.textContent = "STATUS: MAINFRAME SECURED";
+      } else {
+        statusElem.textContent = `STATUS: NODE ${gameState.currentNode}/3 ACTIVE`;
+      }
+      localStorage.setItem('dragoncon_arg_state', JSON.stringify(gameState));
+    }
+
+    function renderNodeBriefing() {
+      if (gameState.completed) {
+        printLine("==================================================", "system", 5);
+        printLine("MISSION COMPLETE. All systems restored. Contact your handler for reward.", "system", 20);
+        printLine("==================================================", "system", 5);
+        return;
+      }
+
+      const activeNode = NODES[gameState.currentNode];
+      printLine(`--- [ CURRENT OBJECTIVE: ${activeNode.title} ] ---`, "warn", 15);
+      printLine(`LOCATION TARGET: ${activeNode.location}`, "dim", 15);
+      printLine(`DIRECTIVE: ${activeNode.briefing}`, "system", 15);
+    }
+
+    function initTerminal() {
+      printLine("==================================================", "system", 5);
+      printLine("   WELCOME TO YOUR DRAGONCON PUZZLE CHALLENGE", "warn", 15);
+      printLine("==================================================", "system", 5);
+      printLine("INITIALIZING REMOTE HANDLER TERMINAL v2.6...", "dim", 10);
+      printLine("ESTABLISHING ENCRYPTED LINK... CONNECTED.", "system", 15);
+      printLine("Type 'HELP' for a list of available directives.\n", "system", 15);
+      updateStatusUI();
+      renderNodeBriefing();
+    }
+
+    function verifyAnswer(submittedText) {
+      if (gameState.completed) {
+        printLine("All nodes are already unlocked.", "warn", 15);
+        return;
+      }
+
+      const currentNodeData = NODES[gameState.currentNode];
+      if (submittedText === currentNodeData.solution) {
+        playBeep(1000, 'sine', 0.1);
+        playBeep(1400, 'sine', 0.15);
+        printLine(currentNodeData.successText, "system", 20);
+        
+        gameState.unlockedNodes.push(gameState.currentNode);
+        
+        if (gameState.currentNode < 3) {
+          gameState.currentNode++;
+          updateStatusUI();
+          renderNodeBriefing();
+        } else {
+          gameState.completed = true;
+          updateStatusUI();
+          renderNodeBriefing();
+        }
+      } else {
+        playBeep(200, 'sawtooth', 0.2);
+        outputElem.classList.add('glitch');
+        setTimeout(() => outputElem.classList.remove('glitch'), 300);
+        printLine("ACCESS DENIED. Invalid credential token submitted.", "alert", 15);
+      }
+    }
+
+    function processCommand(rawInput) {
+      const input = rawInput.trim();
+      if (!input) return;
+
+      const userLine = document.createElement('div');
+      userLine.className = 'line user-input';
+      userLine.textContent = `OPERATIVE@GRID:> ${input}`;
+      outputElem.appendChild(userLine);
+      outputElem.scrollTop = outputElem.scrollHeight;
+
+      playBeep(600, 'square', 0.03);
+
+      const parts = input.split(' ');
+      const cmd = parts[0].toUpperCase();
+      const arg = parts.slice(1).join(' ').toUpperCase();
+
+      switch (cmd) {
+        case 'HELP':
+          printLine("AVAILABLE COMMANDS:", "system", 10);
+          printLine("  STATUS          - Display overall mission progress.", "dim", 10);
+          printLine("  BRIEF           - Re-print current node objective.", "dim", 10);
+          printLine("  HINT            - Request tactical hint from handler.", "dim", 10);
+          printLine("  UNLOCK [CODE]   - Submit node unlock credential.", "dim", 10);
+          printLine("  OVERRIDE [CODE] - Submit node 3 final override.", "dim", 10);
+          printLine("  CLEAR           - Clear terminal window text.", "dim", 10);
+          printLine("  RESET           - Reset game data (Irreversible).", "dim", 10);
+          break;
+
+        case 'STATUS':
+          printLine(`Current Node: ${gameState.currentNode} / 3`, "system", 15);
+          printLine(`Unlocked Nodes: ${gameState.unlockedNodes.join(', ') || 'None'}`, "dim", 15);
+          break;
+
+        case 'BRIEF':
+          renderNodeBriefing();
+          break;
+
+        case 'HINT':
+          playBeep(400, 'sine', 0.1);
+          printLine(`[HANDLERS HINT]: ${NODES[gameState.currentNode].hint}`, "warn", 20);
+          break;
+
+        case 'UNLOCK':
+        case 'OVERRIDE':
+          verifyAnswer(arg);
+          break;
+
+        case 'CLEAR':
+          outputElem.innerHTML = '';
+          break;
+
+        case 'RESET':
+          localStorage.removeItem('dragoncon_arg_state');
+          gameState = { currentNode: 1, unlockedNodes: [], completed: false };
+          outputElem.innerHTML = '';
+          printLine("SYSTEM MEMORY WIPED.", "alert", 10);
+          initTerminal();
+          break;
+
+        default:
+          const currentSolution = NODES[gameState.currentNode].solution;
+          if (cmd === currentSolution || input.toUpperCase() === currentSolution) {
+            verifyAnswer(currentSolution);
+          } else {
+            playBeep(150, 'sawtooth', 0.1);
+            printLine(`Unknown command: '${cmd}'. Type 'HELP' for directive list.`, "alert", 15);
+          }
+          break;
+      }
+    }
+
+    inputElem.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        processCommand(inputElem.value);
+        inputElem.value = '';
+      }
+    });
+
+    // Start typewriter sequence immediately
+    initTerminal();
+  </script>
+</body>
+</html>
