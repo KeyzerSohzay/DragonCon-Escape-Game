@@ -218,18 +218,21 @@
     .switch-group {
       display: flex;
       justify-content: space-around;
+      gap: 6px;
     }
 
     .toggle-btn {
       background: #0b0f19;
       border: 2px solid #4a5568;
       color: #ff4d4d;
-      padding: 8px 16px;
-      font-size: 0.9rem;
+      padding: 8px 12px;
+      font-size: 0.85rem;
       font-weight: bold;
       border-radius: 6px;
       cursor: pointer;
       touch-action: manipulation;
+      flex: 1;
+      text-align: center;
     }
 
     .toggle-btn.active {
@@ -301,6 +304,20 @@
 
     .status-success { color: #00ffcc; }
     .status-error { color: #ff4d4d; }
+
+    /* TAP CONTINUED CONTAINER */
+    .tap-continue-prompt {
+      margin-top: 25px;
+      text-align: center;
+      color: var(--term-warn);
+      font-size: 0.95rem;
+      cursor: pointer;
+      animation: blink 1.2s infinite;
+      padding: 15px;
+      border: 1px dashed var(--term-warn);
+      border-radius: 6px;
+      background: rgba(255, 204, 0, 0.05);
+    }
 
     /* RED COMPLETION TEXT */
     .final-complete-message {
@@ -532,7 +549,7 @@
 </head>
 <body>
 
-  <div class="terminal-container">
+  <div class="terminal-container" id="terminal-container">
     <div class="terminal-header">
       <span>SYS_NAME: DRAGON_NET_V2.6</span>
       <span id="node-status">STATUS: ONLINE</span>
@@ -639,6 +656,7 @@
   <script>
     let gameState = {
       currentNode: 1,
+      node8BriefingSeen: false,
       unlockedNodes: [],
       completed: false
     };
@@ -720,12 +738,13 @@
       8: {
         title: "NODE 8: EMERGENCY POWER OVERRIDE",
         location: "SECURITY CONSOLE",
-        briefing: "Set breakers, adjust frequency alignment, and enter master passcode to complete manual override.",
+        briefing: "Set switches, adjust frequency alignment, and enter master passcode to complete manual override.",
         isConsoleNode: true,
-        hint: "Breakers: ON - OFF - ON | Frequency: 300 | Passcode: 90OZE"
+        hint: "Switches: UP - DOWN - DOWN - DOWN | Frequency: 400 | Passcode: DRAGON"
       }
     };
 
+    const terminalContainer = document.getElementById('terminal-container');
     const terminalBody = document.getElementById('terminal-body');
     const outputElem = document.getElementById('output-text');
     const commandTextElem = document.getElementById('command-text');
@@ -751,11 +770,23 @@
         return;
       }
 
+      const activeKeypad = document.getElementById('passcode');
+
       if (char === 'BACK') {
-        currentInput = currentInput.slice(0, -1);
+        if (activeKeypad) {
+          activeKeypad.value = activeKeypad.value.slice(0, -1);
+        } else {
+          currentInput = currentInput.slice(0, -1);
+        }
       } else {
-        if (currentInput.length < 50) {
-          currentInput += char;
+        if (activeKeypad) {
+          if (activeKeypad.value.length < 10) {
+            activeKeypad.value += char;
+          }
+        } else {
+          if (currentInput.length < 50) {
+            currentInput += char;
+          }
         }
       }
       commandTextElem.textContent = currentInput;
@@ -772,6 +803,11 @@
         return;
       }
 
+      if (gameState.currentNode === 8 && gameState.node8BriefingSeen && !gameState.completed) {
+        checkConsoleSolution();
+        return;
+      }
+
       if (!currentInput.trim()) return;
       
       const textToProcess = currentInput;
@@ -781,8 +817,6 @@
     }
 
     window.addEventListener('keydown', (e) => {
-      if (gameState.currentNode === 8 && !gameState.completed) return;
-
       if (e.key === 'Enter') {
         submitCommand();
       } else if (e.key === 'Backspace') {
@@ -931,11 +965,11 @@
 
     /* CONSOLE PUZZLE LOGIC (NODE 8) */
     function toggleSwitch(btn) {
-      if (btn.innerText === "OFF") {
-        btn.innerText = "ON";
+      if (btn.innerText === "DOWN") {
+        btn.innerText = "UP";
         btn.classList.add("active");
       } else {
-        btn.innerText = "OFF";
+        btn.innerText = "DOWN";
         btn.classList.remove("active");
       }
     }
@@ -945,15 +979,16 @@
     }
 
     function checkConsoleSolution() {
-      const sw1 = document.getElementById('sw1').innerText === "ON";
-      const sw2 = document.getElementById('sw2').innerText === "OFF";
-      const sw3 = document.getElementById('sw3').innerText === "ON";
+      const sw1 = document.getElementById('sw1').innerText === "UP";
+      const sw2 = document.getElementById('sw2').innerText === "DOWN";
+      const sw3 = document.getElementById('sw3').innerText === "DOWN";
+      const sw4 = document.getElementById('sw4').innerText === "DOWN";
       
       const sliderVal = document.getElementById('freqSlider').value;
       const passcode = document.getElementById('passcode').value.trim().toUpperCase();
       const feedback = document.getElementById('feedback');
 
-      if (sw1 && !sw2 && sw3 && sliderVal === "300" && passcode === "90OZE") {
+      if (sw1 && sw2 && sw3 && sw4 && sliderVal === "400" && passcode === "DRAGON") {
         feedback.className = "feedback-msg status-success";
         feedback.innerText = "ACCESS GRANTED! OVERRIDE COMPLETE...";
         
@@ -966,11 +1001,16 @@
       } else {
         failCount++;
         feedback.className = "feedback-msg status-error";
-        feedback.innerText = "OVERRIDE FAILED: Check breaker sequence, frequency, or passcode.";
+        feedback.innerText = "OVERRIDE FAILED: Check switch sequence, frequency, or passcode.";
         if (failCount >= 3) {
           setTimeout(showDysenteryDeath, 800);
         }
       }
+    }
+
+    function advanceFromNode8Briefing() {
+      gameState.node8BriefingSeen = true;
+      renderNodePage();
     }
 
     function renderNodePage() {
@@ -990,9 +1030,9 @@
         return;
       }
 
-      if (gameState.currentNode === 8) {
+      if (gameState.currentNode === 8 && gameState.node8BriefingSeen) {
         if (inputLineContainer) inputLineContainer.style.display = 'none';
-        if (keyboardContainer) keyboardContainer.style.display = 'none';
+        if (keyboardContainer) keyboardContainer.style.display = 'flex';
       } else {
         if (inputLineContainer) inputLineContainer.style.display = 'flex';
         if (keyboardContainer) keyboardContainer.style.display = 'flex';
@@ -1020,6 +1060,25 @@
         outputElem.appendChild(mediaContainer);
       }
 
+      if (gameState.currentNode === 8 && !gameState.node8BriefingSeen) {
+        printLine(`DIRECTIVE CLUES:\n1. Pinky\n2. It’s been how many years? Add zero\n3. It’s the whole theme\n`, "system", 10);
+        
+        const tapPrompt = document.createElement('div');
+        tapPrompt.className = 'tap-continue-prompt';
+        tapPrompt.innerText = '[ TAP ANYWHERE TO CONTINUE TO PUZZLE CONSOLE ]';
+        tapPrompt.onclick = advanceFromNode8Briefing;
+        outputElem.appendChild(tapPrompt);
+
+        terminalContainer.onclick = function handleTapOnce(e) {
+          terminalContainer.onclick = null;
+          advanceFromNode8Briefing();
+        };
+
+        return;
+      }
+
+      terminalContainer.onclick = null;
+
       printLine(`DIRECTIVE:\n${activeNode.briefing}\n`, "system", 10);
 
       if (gameState.currentNode === 6) {
@@ -1034,7 +1093,7 @@
         startNode6DecayTimer();
       }
 
-      if (gameState.currentNode === 8) {
+      if (gameState.currentNode === 8 && gameState.node8BriefingSeen) {
         const consoleElem = document.createElement('div');
         consoleElem.className = 'console-wrapper';
         consoleElem.innerHTML = `
@@ -1044,23 +1103,24 @@
           </div>
 
           <div class="console-section">
-            <span class="console-label">1. SUBSYSTEM BREAKERS (AUX / MAIN / GRID)</span>
+            <span class="console-label">1. SUBSYSTEM SWITCHES</span>
             <div class="switch-group">
-              <button class="toggle-btn" id="sw1" onclick="toggleSwitch(this)">OFF</button>
-              <button class="toggle-btn" id="sw2" onclick="toggleSwitch(this)">OFF</button>
-              <button class="toggle-btn" id="sw3" onclick="toggleSwitch(this)">OFF</button>
+              <button class="toggle-btn" id="sw1" onclick="toggleSwitch(this)">DOWN</button>
+              <button class="toggle-btn" id="sw2" onclick="toggleSwitch(this)">DOWN</button>
+              <button class="toggle-btn" id="sw3" onclick="toggleSwitch(this)">DOWN</button>
+              <button class="toggle-btn" id="sw4" onclick="toggleSwitch(this)">DOWN</button>
             </div>
           </div>
 
           <div class="console-section">
-            <span class="console-label">2. OOZE TIME FREQUENCY ALIGNMENT</span>
+            <span class="console-label">2. FREQUENCY ALIGNMENT</span>
             <input type="range" id="freqSlider" min="100" max="500" step="10" value="200" oninput="updateSlider(this.value)">
             <div class="slider-display" id="sliderVal">200</div>
           </div>
 
           <div class="console-section">
             <span class="console-label">3. ENTER OVERRIDE KEYCODE</span>
-            <input type="text" id="passcode" class="keypad-input" placeholder="_____" maxlength="6" autocomplete="off" spellcheck="false">
+            <input type="text" id="passcode" class="keypad-input" placeholder="_____" maxlength="10" autocomplete="off" spellcheck="false" readonly>
           </div>
 
           <button class="master-btn" onclick="checkConsoleSolution()">ENGAGE OVERRIDE</button>
@@ -1177,7 +1237,7 @@
 
         case 'RESET':
           stopNode6Timers();
-          gameState = { currentNode: 1, unlockedNodes: [], completed: false };
+          gameState = { currentNode: 1, node8BriefingSeen: false, unlockedNodes: [], completed: false };
           failCount = 0;
           updateStatusUI();
           renderNodePage();
