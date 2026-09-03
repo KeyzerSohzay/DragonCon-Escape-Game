@@ -133,7 +133,34 @@
       color: var(--term-warn) !important;
     }
 
-    /* MODERATE WARNING OVERLAY (REPLACES AGGRESIVE GLITCH) */
+    /* ENDING REWARD DISPLAY */
+    .reward-container {
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 8px;
+    }
+
+    .reward-image {
+      max-width: 100%;
+      max-height: 220px;
+      border: 2px solid var(--term-green);
+      border-radius: 6px;
+      box-shadow: 0 0 10px rgba(0, 255, 102, 0.3);
+      object-fit: contain;
+    }
+
+    .reward-text {
+      color: var(--term-green);
+      font-size: 1.1rem;
+      font-weight: bold;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    /* MODERATE WARNING OVERLAY (REPLACES AGGRESSIVE GLITCH) */
     #glitch-overlay {
       display: none;
       position: absolute;
@@ -522,7 +549,7 @@
       6: {
         title: "NODE 6: CORRUPTED SIGNAL DECRYPTION",
         location: "EMERGENCY BUFFER",
-        briefing: "CRITICAL ALERT: Data payload degrading at extreme speeds! Type 'STABILIZE' to pause corruption for 3s.",
+        briefing: "CRITICAL ALERT: Data payload degrading at extreme speeds! Type 'STABILIZE' to pause corruption for 1s.",
         solution: "TAEMIN IS THE ANSWER",
         hint: "Who is the ultimate answer?",
         successText: "ALL SYSTEMS ONLINE. MAINFRAME FULLY RESTORED!"
@@ -644,10 +671,11 @@
     function triggerGlitchSequence(callback) {
       glitchOverlay.style.display = 'flex';
       
+      // Increased error screen duration to 10 seconds (10000ms)
       setTimeout(() => {
         glitchOverlay.style.display = 'none';
         if (callback) callback();
-      }, 2500);
+      }, 10000);
     }
 
     function getScrambledText() {
@@ -674,9 +702,10 @@
 
       if (scrambleTextElem) scrambleTextElem.textContent = NODES[6].solution;
 
+      // Decreased initial flash delay to 0.5 seconds (500ms)
       setTimeout(() => {
         node6FlashFinished = true;
-      }, 1000);
+      }, 500);
 
       node6ScrambleFastInterval = setInterval(() => {
         if (scrambleTextElem) {
@@ -718,14 +747,15 @@
         payload.textContent = NODES[6].solution;
       }
 
-      printLine("[SYSTEM]: SIGNAL STABILIZED FOR 3 SECONDS.", "warn", 5);
+      printLine("[SYSTEM]: SIGNAL STABILIZED FOR 1 SECOND.", "warn", 5);
 
+      // Adjusted stabilization hold time to 1 second (1000ms)
       node6StabilizeTimer = setTimeout(() => {
         node6IsStabilized = false;
         if (box) box.classList.remove('stabilized-box');
         if (payload) payload.classList.remove('stabilized-text');
         printLine("[ALERT]: STABILIZATION EXPIRED! HIGH DEGRADATION RESUMING...", "alert", 5);
-      }, 3000);
+      }, 1000);
     }
 
     function renderNodePage() {
@@ -736,6 +766,16 @@
         printLine("==================================================", "system", 5);
         printLine("MISSION COMPLETE. ALL MAINFRAME NODES SECURED.", "system", 15);
         printLine("==================================================", "system", 5);
+        
+        // Append image and custom completion message
+        const rewardContainer = document.createElement('div');
+        rewardContainer.className = 'reward-container';
+        rewardContainer.innerHTML = `
+          <img src="image.png" alt="Taemin" class="reward-image" />
+          <div class="reward-text">Taemin is always the answer</div>
+        `;
+        outputElem.appendChild(rewardContainer);
+        terminalBody.scrollTop = terminalBody.scrollHeight;
         return;
       }
 
@@ -768,7 +808,8 @@
 
     function dismissDeathScreen() {
       deathScreen.style.display = 'none';
-      if (failCount >= 5) {
+      // Lowered hint popup threshold from 5 to 3 wrong attempts
+      if (failCount >= 3) {
         showHintScreen();
       } else if (gameState.currentNode === 6) {
         renderNodePage();
@@ -848,7 +889,7 @@
           printLine("  CLEAR           - Clear display screen.", "dim", 8);
           printLine("  RESET           - Reset game save data.", "dim", 8);
           if (gameState.currentNode === 6) {
-            printLine("  STABILIZE       - Pause decryption decay for 3s.", "warn", 8);
+            printLine("  STABILIZE       - Pause decryption decay for 1s.", "warn", 8);
           }
           break;
 
