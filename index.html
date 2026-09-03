@@ -105,37 +105,9 @@
     .warn { color: var(--term-warn); }
     .user-input { color: #ffffff; }
 
-    /* DECRYPTION PUZZLE STYLES */
-    .scramble-box {
-      border: 1px dashed var(--term-alert);
-      background: rgba(255, 51, 51, 0.08);
-      padding: 10px;
-      margin: 8px 0;
-      border-radius: 4px;
-    }
-
-    .corrupted-text {
-      color: var(--term-alert);
-      font-size: 1.1rem;
-      font-weight: bold;
-      letter-spacing: 3px;
-      text-align: center;
-      margin-top: 4px;
-      word-break: break-all;
-    }
-
-    .stabilized-box {
-      border-color: var(--term-warn) !important;
-      background: rgba(255, 204, 0, 0.08) !important;
-    }
-
-    .stabilized-text {
-      color: var(--term-warn) !important;
-    }
-
-    /* ENDING REWARD DISPLAY */
-    .reward-container {
-      margin-top: 10px;
+    /* IN-LINE MEDIA DISPLAY */
+    .media-container {
+      margin: 10px 0;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -143,68 +115,21 @@
       gap: 8px;
     }
 
-    .reward-image {
+    .node-image {
       max-width: 100%;
-      max-height: 220px;
+      max-height: 200px;
       border: 2px solid var(--term-green);
       border-radius: 6px;
       box-shadow: 0 0 10px rgba(0, 255, 102, 0.3);
       object-fit: contain;
     }
 
-    .reward-text {
+    .node-image-text {
       color: var(--term-green);
       font-size: 1.1rem;
       font-weight: bold;
       letter-spacing: 1.5px;
       text-transform: uppercase;
-    }
-
-    /* WARNING OVERLAY */
-    #glitch-overlay {
-      display: none;
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: #080202;
-      color: var(--term-alert);
-      z-index: 200;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-      padding: 20px;
-      font-family: var(--font-stack);
-      border: 4px dashed var(--term-alert);
-    }
-
-    .warning-icon {
-      font-size: 2.5rem;
-      margin-bottom: 10px;
-      animation: warningPulse 0.8s infinite alternate ease-in-out;
-    }
-
-    .warning-title {
-      font-size: 1.2rem;
-      font-weight: bold;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      color: var(--term-alert);
-      margin-bottom: 10px;
-      animation: warningPulse 0.8s infinite alternate ease-in-out;
-    }
-
-    .warning-details {
-      font-size: 0.85rem;
-      color: var(--term-warn);
-      letter-spacing: 1px;
-    }
-
-    @keyframes warningPulse {
-      0% { opacity: 0.3; transform: scale(0.96); }
-      100% { opacity: 1; transform: scale(1.04); }
     }
 
     /* INPUT LINE DIRECTLY BELOW TERMINAL TEXT */
@@ -387,20 +312,12 @@
     <div class="terminal-body" id="terminal-body">
       <div id="output-text"></div>
       
-      <div class="terminal-input-line">
+      <div class="terminal-input-line" id="input-line-container">
         <span class="prompt">OPERATIVE@GRID:&gt;</span>
         <div class="virtual-display">
           <span id="command-text"></span><span class="cursor"></span>
         </div>
       </div>
-    </div>
-
-    <!-- WARNING SCREEN OVERLAY -->
-    <div id="glitch-overlay">
-      <div class="warning-icon">⚠️  ⚠️  ⚠️</div>
-      <div class="warning-title">CRITICAL SYSTEM FAILURE</div>
-      <div class="warning-details">CORRUPTION BREACH DETECTED IN NODE 6</div>
-      <div class="warning-details" style="margin-top: 8px; color: #ff8888;">INITIATING EMERGENCY DECRYPTION PROTOCOL...</div>
     </div>
 
     <!-- DEATH OVERLAY -->
@@ -491,15 +408,6 @@
 
     let failCount = 0;
 
-    let node6Timer = null;
-    let node6ScrambleFastInterval = null;
-    let node6TimeLeft = 15;
-    let node6CorruptionLevel = 0;
-    let node6IsStabilized = false;
-    let node6StabilizeTimer = null;
-    let node6FlashFinished = false;
-    const scrambleChars = "!@#$%^&*()_+-=[]{}|;:,.<>?/0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZæøå#&§";
-
     try {
       localStorage.removeItem('dragoncon_arg_state');
     } catch(e) {}
@@ -546,19 +454,13 @@
         successText: "NODE 5 UNLOCKED."
       },
       6: {
-        title: "NODE 6: CORRUPTED SIGNAL DECRYPTION",
-        location: "EMERGENCY BUFFER",
-        briefing: "CRITICAL ALERT: Data payload degrading at extreme speeds! Type 'STABILIZE' to pause corruption for 1s.",
-        solution: "TAEMIN IS THE ANSWER",
-        hint: "Who is the ultimate answer?",
-        successText: "DECRYPTION COMPLETE. FINAL GATE UNLOCKED!"
-      },
-      7: {
-        title: "NODE 7: FINAL OVERRIDE GATE",
+        title: "NODE 6: SYSTEM OVERRIDE GATE",
         location: "SYSTEM CORE",
         briefing: "What's the password?",
         solution: "HIIMDAISY",
         hint: "I said Taemin is always the answer… but not the password",
+        hasImage: true,
+        imageText: "Taemin is always the answer",
         successText: "ALL SYSTEMS ONLINE. MAINFRAME FULLY RESTORED!"
       }
     };
@@ -570,7 +472,7 @@
     const deathScreen = document.getElementById('death-screen');
     const hintScreen = document.getElementById('hint-screen');
     const hintTextElem = document.getElementById('hint-text');
-    const glitchOverlay = document.getElementById('glitch-overlay');
+    const inputLineContainer = document.getElementById('input-line-container');
 
     let currentInput = "";
     let printQueue = [];
@@ -665,7 +567,7 @@
       if (gameState.completed) {
         statusElem.textContent = "STATUS: SECURED";
       } else {
-        statusElem.textContent = `NODE ${gameState.currentNode}/7 ACTIVE`;
+        statusElem.textContent = `NODE ${gameState.currentNode}/6 ACTIVE`;
       }
     }
 
@@ -675,145 +577,49 @@
       isTyping = false;
     }
 
-    function triggerGlitchSequence(callback) {
-      glitchOverlay.style.display = 'flex';
-      
-      setTimeout(() => {
-        glitchOverlay.style.display = 'none';
-        if (callback) callback();
-      }, 10000);
-    }
-
-    function getScrambledText() {
-      if (node6IsStabilized) return NODES[6].solution;
-      if (!node6FlashFinished) return NODES[6].solution;
-
-      return NODES[6].solution.split('').map(char => {
-        if (char === ' ') return ' ';
-        return Math.random() < node6CorruptionLevel 
-          ? scrambleChars[Math.floor(Math.random() * scrambleChars.length)]
-          : char;
-      }).join('');
-    }
-
-    function startNode6DecayTimer() {
-      stopNode6Timers();
-      node6TimeLeft = 15;
-      node6CorruptionLevel = 0.15;
-      node6IsStabilized = false;
-      node6FlashFinished = false;
-
-      const scrambleTextElem = document.getElementById('node6-payload');
-      const timerTextElem = document.getElementById('node6-timer');
-
-      if (scrambleTextElem) scrambleTextElem.textContent = NODES[6].solution;
-
-      setTimeout(() => {
-        node6FlashFinished = true;
-      }, 500);
-
-      node6ScrambleFastInterval = setInterval(() => {
-        if (scrambleTextElem) {
-          scrambleTextElem.textContent = getScrambledText();
-        }
-      }, 100);
-
-      node6Timer = setInterval(() => {
-        if (node6FlashFinished && !node6IsStabilized) {
-          node6TimeLeft--;
-          node6CorruptionLevel = Math.min(1, (15 - node6TimeLeft) / 8);
-        }
-
-        if (timerTextElem) timerTextElem.textContent = `TIME REMAINING: ${node6TimeLeft}s`;
-
-        if (node6TimeLeft <= 0) {
-          stopNode6Timers();
-          showDysenteryDeath();
-        }
-      }, 1000);
-    }
-
-    function stopNode6Timers() {
-      if (node6Timer) clearInterval(node6Timer);
-      if (node6ScrambleFastInterval) clearInterval(node6ScrambleFastInterval);
-      if (node6StabilizeTimer) clearTimeout(node6StabilizeTimer);
-    }
-
-    function triggerNode6Stabilize() {
-      if (node6IsStabilized || gameState.currentNode !== 6) return;
-
-      node6IsStabilized = true;
-      const box = document.getElementById('node6-box');
-      const payload = document.getElementById('node6-payload');
-
-      if (box) box.classList.add('stabilized-box');
-      if (payload) {
-        payload.classList.add('stabilized-text');
-        payload.textContent = NODES[6].solution;
-      }
-
-      printLine("[SYSTEM]: SIGNAL STABILIZED FOR 1 SECOND.", "warn", 5);
-
-      node6StabilizeTimer = setTimeout(() => {
-        node6IsStabilized = false;
-        if (box) box.classList.remove('stabilized-box');
-        if (payload) payload.classList.remove('stabilized-text');
-        printLine("[ALERT]: STABILIZATION EXPIRED! HIGH DEGRADATION RESUMING...", "alert", 5);
-      }, 1000);
-    }
-
     function renderNodePage() {
       clearScreen();
-      stopNode6Timers();
       
       if (gameState.completed) {
+        if (inputLineContainer) inputLineContainer.style.display = 'none';
+        
         printLine("==================================================", "system", 5);
         printLine("MISSION COMPLETE. ALL MAINFRAME NODES SECURED.", "system", 15);
         printLine("==================================================", "system", 5);
         
-        const rewardContainer = document.createElement('div');
-        rewardContainer.className = 'reward-container';
-        
-        // Multi-fallback image loader specifically optimized for 'image1'
-        rewardContainer.innerHTML = `
-          <img src="./image1" alt="Taemin" class="reward-image" 
-               onerror="
-                 if (!this.tried) { this.tried = 1; this.src='./image1.jpeg'; }
-                 else if (this.tried === 1) { this.tried = 2; this.src='./image1.jpg'; }
-                 else if (this.tried === 2) { this.tried = 3; this.src='./image1.png'; }
-                 else if (this.tried === 3) { this.tried = 4; this.src='./image.1'; }
-               " />
-          <div class="reward-text">Taemin is always the answer</div>
-        `;
-        outputElem.appendChild(rewardContainer);
         terminalBody.scrollTop = terminalBody.scrollHeight;
         return;
       }
+
+      if (inputLineContainer) inputLineContainer.style.display = 'flex';
 
       const activeNode = NODES[gameState.currentNode];
       printLine(`==================================================`, "system", 5);
       printLine(`  ${activeNode.title.toUpperCase()}`, "warn", 10);
       printLine(`==================================================`, "system", 5);
       printLine(`LOCATION TARGET: ${activeNode.location}`, "dim", 10);
-      printLine(`DIRECTIVE:\n${activeNode.briefing}\n`, "system", 10);
 
-      if (gameState.currentNode === 6) {
-        const scrambleContainer = document.createElement('div');
-        scrambleContainer.className = 'scramble-box';
-        scrambleContainer.id = 'node6-box';
-        scrambleContainer.innerHTML = `
-          <div style="font-size: 0.8rem; color: var(--term-warn);" id="node6-timer">TIME REMAINING: 15s</div>
-          <div class="corrupted-text" id="node6-payload">${NODES[6].solution}</div>
+      if (activeNode.hasImage) {
+        const mediaContainer = document.createElement('div');
+        mediaContainer.className = 'media-container';
+        mediaContainer.innerHTML = `
+          <img src="./image1" alt="Taemin" class="node-image" 
+               onerror="
+                 if (!this.tried) { this.tried = 1; this.src='./image1.jpeg'; }
+                 else if (this.tried === 1) { this.tried = 2; this.src='./image1.jpg'; }
+                 else if (this.tried === 2) { this.tried = 3; this.src='./image1.png'; }
+                 else if (this.tried === 3) { this.tried = 4; this.src='./image.1'; }
+               " />
+          <div class="node-image-text">${activeNode.imageText}</div>
         `;
-        outputElem.appendChild(scrambleContainer);
-        startNode6DecayTimer();
+        outputElem.appendChild(mediaContainer);
       }
 
+      printLine(`DIRECTIVE:\n${activeNode.briefing}\n`, "system", 10);
       printLine("Type 'HELP' for available directives.", "dim", 10);
     }
 
     function showDysenteryDeath() {
-      stopNode6Timers();
       deathScreen.style.display = 'flex';
     }
 
@@ -821,8 +627,6 @@
       deathScreen.style.display = 'none';
       if (failCount >= 3) {
         showHintScreen();
-      } else if (gameState.currentNode === 6) {
-        renderNodePage();
       }
     }
 
@@ -834,9 +638,6 @@
     function dismissHintScreen() {
       hintScreen.style.display = 'none';
       failCount = 0;
-      if (gameState.currentNode === 6) {
-        renderNodePage();
-      }
     }
 
     function verifyAnswer(submittedText) {
@@ -851,20 +652,11 @@
         failCount = 0;
         gameState.unlockedNodes.push(gameState.currentNode);
         
-        if (gameState.currentNode < 7) {
-          if (gameState.currentNode === 5) {
-            triggerGlitchSequence(() => {
-              gameState.currentNode++;
-              updateStatusUI();
-              renderNodePage();
-            });
-          } else {
-            gameState.currentNode++;
-            updateStatusUI();
-            renderNodePage();
-          }
+        if (gameState.currentNode < 6) {
+          gameState.currentNode++;
+          updateStatusUI();
+          renderNodePage();
         } else {
-          stopNode6Timers();
           gameState.completed = true;
           updateStatusUI();
           renderNodePage();
@@ -883,12 +675,6 @@
       const cmd = parts[0].toUpperCase();
       const arg = parts.slice(1).join(' ').trim();
 
-      if (gameState.currentNode === 6 && (cmd === 'STABILIZE' || cmd === 'STAB')) {
-        printLine(`OPERATIVE@GRID:> ${input}`, "user-input", 5);
-        triggerNode6Stabilize();
-        return;
-      }
-
       switch (cmd) {
         case 'HELP':
           printLine(`OPERATIVE@GRID:> ${input}`, "user-input", 5);
@@ -898,14 +684,11 @@
           printLine("  HINT            - Request tactical hint.", "dim", 8);
           printLine("  CLEAR           - Clear display screen.", "dim", 8);
           printLine("  RESET           - Reset game save data.", "dim", 8);
-          if (gameState.currentNode === 6) {
-            printLine("  STABILIZE       - Pause decryption decay for 1s.", "warn", 8);
-          }
           break;
 
         case 'STATUS':
           printLine(`OPERATIVE@GRID:> ${input}`, "user-input", 5);
-          printLine(`Current Node: ${gameState.currentNode} / 7`, "system", 10);
+          printLine(`Current Node: ${gameState.currentNode} / 6`, "system", 10);
           printLine(`Unlocked Nodes: ${gameState.unlockedNodes.join(', ') || 'None'}`, "dim", 10);
           break;
 
@@ -923,7 +706,6 @@
           break;
 
         case 'RESET':
-          stopNode6Timers();
           gameState = { currentNode: 1, unlockedNodes: [], completed: false };
           failCount = 0;
           updateStatusUI();
