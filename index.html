@@ -74,6 +74,17 @@
       word-break: break-word;
     }
 
+    .typing::after {
+      content: '█';
+      animation: blink 0.7s infinite;
+      margin-left: 2px;
+    }
+
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0; }
+    }
+
     .system { color: var(--term-green); }
     .dim { color: var(--term-dim); }
     .alert { color: var(--term-alert); font-weight: bold; }
@@ -165,12 +176,44 @@
     const inputElem = document.getElementById('cmd-input');
     const statusElem = document.getElementById('node-status');
 
-    function printLine(text, classType = 'system') {
+    // --- TYPEWRITER QUEUE ENGINE ---
+    let printQueue = [];
+    let isTyping = false;
+
+    function printLine(text, classType = 'system', speed = 15) {
+      printQueue.push({ text, classType, speed });
+      if (!isTyping) {
+        processQueue();
+      }
+    }
+
+    function processQueue() {
+      if (printQueue.length === 0) {
+        isTyping = false;
+        return;
+      }
+
+      isTyping = true;
+      const { text, classType, speed } = printQueue.shift();
       const line = document.createElement('div');
-      line.className = `line ${classType}`;
-      line.textContent = text;
+      line.className = `line ${classType} typing`;
       outputElem.appendChild(line);
-      outputElem.scrollTop = outputElem.scrollHeight;
+
+      let index = 0;
+
+      function typeNextChar() {
+        if (index < text.length) {
+          line.textContent += text.charAt(index);
+          index++;
+          outputElem.scrollTop = outputElem.scrollHeight;
+          setTimeout(typeNextChar, speed);
+        } else {
+          line.classList.remove('typing');
+          setTimeout(processQueue, 30);
+        }
+      }
+
+      typeNextChar();
     }
 
     function updateStatusUI() {
@@ -186,39 +229,41 @@
 
     function renderNodeBriefing() {
       if (gameState.completed) {
-        printLine("==================================================", "system");
-        printLine("MISSION COMPLETE. All systems restored.", "system");
-        printLine("==================================================", "system");
+        printLine("==================================================", "system", 5);
+        printLine("MISSION COMPLETE. All systems restored.", "system", 15);
+        printLine("==================================================", "system", 5);
         return;
       }
 
       const activeNode = NODES[gameState.currentNode];
-      printLine(`--- [ CURRENT OBJECTIVE: ${activeNode.title} ] ---`, "warn");
-      printLine(`LOCATION TARGET: ${activeNode.location}`, "dim");
-      printLine(`DIRECTIVE: ${activeNode.briefing}`, "system");
+      printLine(`--- [ CURRENT OBJECTIVE: ${activeNode.title} ] ---`, "warn", 10);
+      printLine(`LOCATION TARGET: ${activeNode.location}`, "dim", 10);
+      printLine(`DIRECTIVE: ${activeNode.briefing}`, "system", 12);
     }
 
     function initTerminal() {
       outputElem.innerHTML = '';
-      printLine("==================================================", "system");
-      printLine("   WELCOME TO YOUR DRAGONCON PUZZLE CHALLENGE", "warn");
-      printLine("==================================================", "system");
-      printLine("INITIALIZING TERMINAL v2.6...", "dim");
-      printLine("LINK ESTABLISHED.", "system");
-      printLine("Type 'HELP' for available directives.\n", "system");
+      printQueue = [];
+      isTyping = false;
+      printLine("==================================================", "system", 5);
+      printLine("   WELCOME TO YOUR DRAGONCON PUZZLE CHALLENGE", "warn", 10);
+      printLine("==================================================", "system", 5);
+      printLine("INITIALIZING TERMINAL v2.6...", "dim", 10);
+      printLine("LINK ESTABLISHED.", "system", 10);
+      printLine("Type 'HELP' for available directives.\n", "system", 10);
       updateStatusUI();
       renderNodeBriefing();
     }
 
     function verifyAnswer(submittedText) {
       if (gameState.completed) {
-        printLine("All nodes are already unlocked.", "warn");
+        printLine("All nodes are already unlocked.", "warn", 15);
         return;
       }
 
       const currentNodeData = NODES[gameState.currentNode];
       if (submittedText === currentNodeData.solution) {
-        printLine(currentNodeData.successText, "system");
+        printLine(currentNodeData.successText, "system", 15);
         
         gameState.unlockedNodes.push(gameState.currentNode);
         
@@ -232,7 +277,7 @@
           renderNodeBriefing();
         }
       } else {
-        printLine("ACCESS DENIED. Invalid credential token submitted.", "alert");
+        printLine("ACCESS DENIED. Invalid credential token submitted.", "alert", 15);
       }
     }
 
@@ -240,7 +285,7 @@
       const input = rawInput.trim();
       if (!input) return;
 
-      printLine(`OPERATIVE@GRID:> ${input}`, "user-input");
+      printLine(`OPERATIVE@GRID:> ${input}`, "user-input", 5);
 
       const parts = input.split(' ');
       const cmd = parts[0].toUpperCase();
@@ -248,19 +293,19 @@
 
       switch (cmd) {
         case 'HELP':
-          printLine("AVAILABLE COMMANDS:", "system");
-          printLine("  STATUS          - Display overall progress.", "dim");
-          printLine("  BRIEF           - Show current objective.", "dim");
-          printLine("  HINT            - Request tactical hint.", "dim");
-          printLine("  UNLOCK [CODE]   - Submit node credential.", "dim");
-          printLine("  OVERRIDE [CODE] - Submit node 3 override.", "dim");
-          printLine("  CLEAR           - Clear display screen.", "dim");
-          printLine("  RESET           - Reset game save data.", "dim");
+          printLine("AVAILABLE COMMANDS:", "system", 10);
+          printLine("  STATUS          - Display overall progress.", "dim", 8);
+          printLine("  BRIEF           - Show current objective.", "dim", 8);
+          printLine("  HINT            - Request tactical hint.", "dim", 8);
+          printLine("  UNLOCK [CODE]   - Submit node credential.", "dim", 8);
+          printLine("  OVERRIDE [CODE] - Submit node 3 override.", "dim", 8);
+          printLine("  CLEAR           - Clear display screen.", "dim", 8);
+          printLine("  RESET           - Reset game save data.", "dim", 8);
           break;
 
         case 'STATUS':
-          printLine(`Current Node: ${gameState.currentNode} / 3`, "system");
-          printLine(`Unlocked Nodes: ${gameState.unlockedNodes.join(', ') || 'None'}`, "dim");
+          printLine(`Current Node: ${gameState.currentNode} / 3`, "system", 10);
+          printLine(`Unlocked Nodes: ${gameState.unlockedNodes.join(', ') || 'None'}`, "dim", 10);
           break;
 
         case 'BRIEF':
@@ -268,7 +313,7 @@
           break;
 
         case 'HINT':
-          printLine(`[HANDLER HINT]: ${NODES[gameState.currentNode].hint}`, "warn");
+          printLine(`[HANDLER HINT]: ${NODES[gameState.currentNode].hint}`, "warn", 12);
           break;
 
         case 'UNLOCK':
@@ -291,7 +336,7 @@
           if (cmd === currentSolution || input.toUpperCase() === currentSolution) {
             verifyAnswer(currentSolution);
           } else {
-            printLine(`Unknown command: '${cmd}'. Type 'HELP' for commands.`, "alert");
+            printLine(`Unknown command: '${cmd}'. Type 'HELP' for commands.`, "alert", 10);
           }
           break;
       }
