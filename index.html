@@ -78,7 +78,7 @@
       display: flex;
       flex-direction: column;
       gap: 8px;
-      font-size: 0.95rem; /* Increased text size for readability */
+      font-size: 0.95rem;
       line-height: 1.35;
       -webkit-overflow-scrolling: touch;
     }
@@ -170,7 +170,7 @@
       border-radius: 4px;
       color: var(--term-green);
       font-family: var(--font-stack);
-      font-size: 0.9rem; /* Slightly larger key labels */
+      font-size: 0.9rem;
       font-weight: bold;
       display: flex;
       justify-content: center;
@@ -236,6 +236,42 @@
       font-size: 0.8rem;
       animation: blink 1s infinite;
     }
+
+    /* HINT POPUP OVERLAY */
+    #hint-screen {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(5, 7, 9, 0.95);
+      border: 2px solid var(--term-warn);
+      color: var(--term-warn);
+      z-index: 101;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 20px;
+      font-family: var(--font-stack);
+    }
+
+    .hint-title {
+      font-size: 1.1rem;
+      font-weight: bold;
+      letter-spacing: 2px;
+      margin-bottom: 12px;
+      color: var(--term-warn);
+    }
+
+    .hint-body {
+      font-size: 1rem;
+      color: #ffffff;
+      margin-bottom: 20px;
+      line-height: 1.4;
+      max-width: 90%;
+    }
   </style>
 </head>
 <body>
@@ -273,6 +309,12 @@
       <div class="death-text">YOU HAVE DIED OF DYSENTERY.</div>
       <div class="retry-prompt">[ TAP SCREEN TO RETRY ]</div>
     </div>
+
+    <div id="hint-screen" onclick="dismissHintScreen()">
+      <div class="hint-title">⚠️ SYSTEM TACTICAL HINT ⚠️</div>
+      <div class="hint-body" id="hint-text"></div>
+      <div class="retry-prompt">[ TAP ANYWHERE TO RETURN ]</div>
+    </div>
   </div>
 
   <div class="virtual-keyboard">
@@ -287,6 +329,7 @@
       <button class="key" onclick="pressKey('8')">8</button>
       <button class="key" onclick="pressKey('9')">9</button>
       <button class="key" onclick="pressKey('0')">0</button>
+      <button class="key" onclick="pressKey(':')">:</button>
     </div>
     <div class="kb-row">
       <button class="key" onclick="pressKey('Q')">Q</button>
@@ -334,6 +377,8 @@
       completed: false
     };
 
+    let failCount = 0; // Tracks failed attempts per node
+
     try {
       localStorage.removeItem('dragoncon_arg_state');
     } catch(e) {}
@@ -361,7 +406,15 @@
         briefing: "TEETH TEETH TEETH TEETH",
         solution: "ICE",
         hint: "ON",
-        successText: "EXOPLANET FORCE FIELD DEACTIVATED. MAINFRAME RESTORED!"
+        successText: "EXOPLANET FORCE FIELD DEACTIVATED. Node 3 online."
+      },
+      4: {
+        title: "NODE 4: THE GOOD PART",
+        location: "MAINFRAME CORE",
+        briefing: "Here comes the good part",
+        solution: "2:31",
+        hint: "pause",
+        successText: "ALL SYSTEMS ONLINE. MAINFRAME FULLY RESTORED!"
       }
     };
 
@@ -370,6 +423,8 @@
     const commandTextElem = document.getElementById('command-text');
     const statusElem = document.getElementById('node-status');
     const deathScreen = document.getElementById('death-screen');
+    const hintScreen = document.getElementById('hint-screen');
+    const hintTextElem = document.getElementById('hint-text');
 
     let currentInput = "";
     let printQueue = [];
@@ -378,6 +433,10 @@
     function pressKey(char) {
       if (deathScreen.style.display === 'flex') {
         dismissDeathScreen();
+        return;
+      }
+      if (hintScreen.style.display === 'flex') {
+        dismissHintScreen();
         return;
       }
 
@@ -395,6 +454,10 @@
     function submitCommand() {
       if (deathScreen.style.display === 'flex') {
         dismissDeathScreen();
+        return;
+      }
+      if (hintScreen.style.display === 'flex') {
+        dismissHintScreen();
         return;
       }
 
@@ -456,7 +519,7 @@
       if (gameState.completed) {
         statusElem.textContent = "STATUS: SECURED";
       } else {
-        statusElem.textContent = `NODE ${gameState.currentNode}/3 ACTIVE`;
+        statusElem.textContent = `NODE ${gameState.currentNode}/4 ACTIVE`;
       }
     }
 
@@ -491,6 +554,19 @@
 
     function dismissDeathScreen() {
       deathScreen.style.display = 'none';
+      if (failCount >= 5) {
+        showHintScreen();
+      }
+    }
+
+    function showHintScreen() {
+      hintTextElem.textContent = NODES[gameState.currentNode].hint;
+      hintScreen.style.display = 'flex';
+    }
+
+    function dismissHintScreen() {
+      hintScreen.style.display = 'none';
+      failCount = 0; // Reset counter after hint is viewed
     }
 
     function verifyAnswer(submittedText) {
@@ -502,9 +578,10 @@
       const cleanSubmission = submittedText.trim().toUpperCase();
 
       if (cleanSubmission === currentNodeData.solution) {
+        failCount = 0; // Reset counter on correct answer
         gameState.unlockedNodes.push(gameState.currentNode);
         
-        if (gameState.currentNode < 3) {
+        if (gameState.currentNode < 4) {
           gameState.currentNode++;
           updateStatusUI();
           renderNodePage();
@@ -514,6 +591,7 @@
           renderNodePage();
         }
       } else {
+        failCount++;
         showDysenteryDeath();
       }
     }
@@ -539,7 +617,7 @@
 
         case 'STATUS':
           printLine(`OPERATIVE@GRID:> ${input}`, "user-input", 5);
-          printLine(`Current Node: ${gameState.currentNode} / 3`, "system", 10);
+          printLine(`Current Node: ${gameState.currentNode} / 4`, "system", 10);
           printLine(`Unlocked Nodes: ${gameState.unlockedNodes.join(', ') || 'None'}`, "dim", 10);
           break;
 
@@ -558,6 +636,7 @@
 
         case 'RESET':
           gameState = { currentNode: 1, unlockedNodes: [], completed: false };
+          failCount = 0;
           updateStatusUI();
           renderNodePage();
           break;
