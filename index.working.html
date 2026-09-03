@@ -1,0 +1,49 @@
+/******************************************************************
+ * PUZZLE DATABASE & STATE
+ ******************************************************************/
+let gameState = JSON.parse(localStorage.getItem('dragoncon_arg_state')) || {
+  currentNode: 1,
+  unlockedNodes: [],
+  completed: false
+};
+
+const NODES = {
+  1: {
+    title: "NODE 1: Authentication Gate",
+    location: "Command Access",
+    briefing: "To enter the game, enter this word that Liam has everyone yell for the password… but is commonly misspelled.",
+    solution: "PINUS",
+    hint: "It's five letters, starts with P, ends with S... think pine tree genus spelling!",
+    successText: "ACCESS GRANTED. Passphrase verified. System authenticated!"
+  },
+  2: {
+    title: "NODE 2: KWANGYA SYNK Matrix",
+    location: "Flat / Wilderness Grid",
+    briefing: "SECURITY CHECK 2: Multiply the number of aespa members (4) by 2016 (SM Culture Tech unveiling). Add 23 (Atomic weight of Na for Naevis).\nTarget Format: UNLOCK [NUMBER]",
+    solution: "8087",
+    hint: "(4 * 2016) + 23.",
+    successText: "SYNK LEVEL 100%. NAEVIS LINK ESTABLISHED. Node 2 online."
+  },
+  3: {
+    title: "NODE 3: EXOPLANET Force Field",
+    location: "EXOPLANET Command Core",
+    briefing: "FINAL OVERRIDE: Add original EXO member count (12) to EXO-K debut year (2012), then subtract the total number of member superpowers (12).\nTarget Format: OVERRIDE [NUMBER]",
+    solution: "2012",
+    hint: "12 + 2012 - 12.",
+    successText: "EXOPLANET FORCE FIELD DEACTIVATED. MAINFRAME RESTORED!"
+  }
+};
+
+/******************************************************************
+ * TERMINAL INITIALIZATION
+ ******************************************************************/
+function initTerminal() {
+  printLine("==================================================", "system", 5);
+  printLine("   WELCOME TO YOUR DRAGONCON PUZZLE CHALLENGE", "warn", 15);
+  printLine("==================================================", "system", 5);
+  printLine("INITIALIZING REMOTE HANDLER TERMINAL v2.6...", "dim", 10);
+  printLine("ESTABLISHING ENCRYPTED LINK... CONNECTED.", "system", 15);
+  printLine("Type 'HELP' for a list of available directives.\n", "system", 15);
+  updateStatusUI();
+  renderNodeBriefing();
+}
