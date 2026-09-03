@@ -170,7 +170,7 @@
       text-transform: uppercase;
     }
 
-    /* CONSOLE WRAPPER STYLES */
+    /* CONSOLE WRAPPER STYLES (NODE 8) */
     .console-wrapper {
       width: 100%;
       max-width: 600px;
@@ -302,7 +302,7 @@
     .status-success { color: #00ffcc; }
     .status-error { color: #ff4d4d; }
 
-    /* FINAL RED COMPLETION MESSAGE */
+    /* RED COMPLETION TEXT */
     .final-complete-message {
       color: var(--term-alert);
       font-size: 1.4rem;
@@ -396,7 +396,7 @@
       animation: blink 0.8s infinite;
     }
 
-    /* FIXED RETRO ON-SCREEN KEYBOARD */
+    /* VIRTUAL KEYBOARD */
     .virtual-keyboard {
       width: 100%;
       max-width: 800px;
@@ -493,7 +493,7 @@
       animation: blink 1s infinite;
     }
 
-    /* HINT POPUP OVERLAY */
+    /* HINT OVERLAY */
     #hint-screen {
       display: none;
       position: absolute;
@@ -672,7 +672,7 @@
         location: "SEXY STAGE",
         briefing: "SECURITY CHECK 2: She puts water bottles down the best.",
         solution: "HWASA",
-        hint: "Think iconic stage moments",
+        hint: "Think iconic stage moments!",
         successText: "SYNK LEVEL 100%. MAMAMOO LINK ESTABLISHED. Node 2 online."
       },
       3: {
@@ -712,7 +712,7 @@
         location: "SYSTEM CORE",
         briefing: "What's the password?",
         solution: "HIIMDAISY",
-        hint: "I said Taemin is always the answer… not the password",
+        hint: "I said Taemin is always the answer… but not the password",
         hasImage: true,
         imageText: "Taemin is always the answer",
         successText: "NODE 7 UNLOCKED. TRANSFERRING CONTROL TO EMERGENCY POWER SYSTEM..."
@@ -929,7 +929,7 @@
       }, 1000);
     }
 
-    /* CONSOLE PUZZLE LOGIC */
+    /* CONSOLE PUZZLE LOGIC (NODE 8) */
     function toggleSwitch(btn) {
       if (btn.innerText === "OFF") {
         btn.innerText = "ON";
