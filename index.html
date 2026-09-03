@@ -551,6 +551,14 @@
         briefing: "CRITICAL ALERT: Data payload degrading at extreme speeds! Type 'STABILIZE' to pause corruption for 1s.",
         solution: "TAEMIN IS THE ANSWER",
         hint: "Who is the ultimate answer?",
+        successText: "DECRYPTION COMPLETE. FINAL GATE UNLOCKED!"
+      },
+      7: {
+        title: "NODE 7: FINAL OVERRIDE GATE",
+        location: "SYSTEM CORE",
+        briefing: "What's the password?",
+        solution: "HIIMDAISY",
+        hint: "I said Taemin is always the answer… but not the password",
         successText: "ALL SYSTEMS ONLINE. MAINFRAME FULLY RESTORED!"
       }
     };
@@ -657,7 +665,7 @@
       if (gameState.completed) {
         statusElem.textContent = "STATUS: SECURED";
       } else {
-        statusElem.textContent = `NODE ${gameState.currentNode}/6 ACTIVE`;
+        statusElem.textContent = `NODE ${gameState.currentNode}/7 ACTIVE`;
       }
     }
 
@@ -843,7 +851,7 @@
         failCount = 0;
         gameState.unlockedNodes.push(gameState.currentNode);
         
-        if (gameState.currentNode < 6) {
+        if (gameState.currentNode < 7) {
           if (gameState.currentNode === 5) {
             triggerGlitchSequence(() => {
               gameState.currentNode++;
@@ -897,7 +905,7 @@
 
         case 'STATUS':
           printLine(`OPERATIVE@GRID:> ${input}`, "user-input", 5);
-          printLine(`Current Node: ${gameState.currentNode} / 6`, "system", 10);
+          printLine(`Current Node: ${gameState.currentNode} / 7`, "system", 10);
           printLine(`Unlocked Nodes: ${gameState.unlockedNodes.join(', ') || 'None'}`, "dim", 10);
           break;
 
