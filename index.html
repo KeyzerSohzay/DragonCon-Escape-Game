@@ -160,7 +160,7 @@
       text-transform: uppercase;
     }
 
-    /* MODERATE WARNING OVERLAY (REPLACES AGGRESSIVE GLITCH) */
+    /* WARNING OVERLAY */
     #glitch-overlay {
       display: none;
       position: absolute;
@@ -491,7 +491,6 @@
 
     let failCount = 0;
 
-    // Node 6 Hardcore Decay Timer State
     let node6Timer = null;
     let node6ScrambleFastInterval = null;
     let node6TimeLeft = 15;
@@ -671,7 +670,6 @@
     function triggerGlitchSequence(callback) {
       glitchOverlay.style.display = 'flex';
       
-      // Increased error screen duration to 10 seconds (10000ms)
       setTimeout(() => {
         glitchOverlay.style.display = 'none';
         if (callback) callback();
@@ -702,7 +700,6 @@
 
       if (scrambleTextElem) scrambleTextElem.textContent = NODES[6].solution;
 
-      // Decreased initial flash delay to 0.5 seconds (500ms)
       setTimeout(() => {
         node6FlashFinished = true;
       }, 500);
@@ -749,7 +746,6 @@
 
       printLine("[SYSTEM]: SIGNAL STABILIZED FOR 1 SECOND.", "warn", 5);
 
-      // Adjusted stabilization hold time to 1 second (1000ms)
       node6StabilizeTimer = setTimeout(() => {
         node6IsStabilized = false;
         if (box) box.classList.remove('stabilized-box');
@@ -767,11 +763,12 @@
         printLine("MISSION COMPLETE. ALL MAINFRAME NODES SECURED.", "system", 15);
         printLine("==================================================", "system", 5);
         
-        // Append image and custom completion message
         const rewardContainer = document.createElement('div');
         rewardContainer.className = 'reward-container';
+        
+        // Local image fallback path
         rewardContainer.innerHTML = `
-          <img src="image.png" alt="Taemin" class="reward-image" />
+          <img src="image.jpg" alt="Taemin" class="reward-image" onerror="this.onerror=null; this.src='image.png';" />
           <div class="reward-text">Taemin is always the answer</div>
         `;
         outputElem.appendChild(rewardContainer);
@@ -808,7 +805,6 @@
 
     function dismissDeathScreen() {
       deathScreen.style.display = 'none';
-      // Lowered hint popup threshold from 5 to 3 wrong attempts
       if (failCount >= 3) {
         showHintScreen();
       } else if (gameState.currentNode === 6) {
