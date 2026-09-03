@@ -46,7 +46,7 @@
       max-width: 800px;
       margin: 0 auto;
       flex: 1 1 auto;
-      min-height: 0; /* Ensures terminal shrinks so keyboard stays on screen */
+      min-height: 0;
       background: #050709;
       border: 2px solid var(--term-green);
       box-shadow: 0 0 15px rgba(0, 255, 102, 0.2);
@@ -70,7 +70,6 @@
       flex-shrink: 0;
     }
 
-    /* TEXT AREA & INPUT BELONG IN THE SAME SCROLLABLE CONTAINER */
     .terminal-body {
       flex: 1;
       padding: 8px 10px;
@@ -246,11 +245,9 @@
       <span id="node-status">STATUS: ONLINE</span>
     </div>
 
-    <!-- TERMINAL OUTPUT BODY -->
     <div class="terminal-body" id="terminal-body">
       <div id="output-text"></div>
       
-      <!-- INPUT DISPLAY PLACED BELOW TEXT INSIDE TERMINAL -->
       <div class="terminal-input-line">
         <span class="prompt">OPERATIVE@GRID:&gt;</span>
         <div class="virtual-display">
@@ -259,7 +256,6 @@
       </div>
     </div>
 
-    <!-- DYSENTERY OVERLAY -->
     <div id="death-screen" onclick="dismissDeathScreen()">
       <div class="tombstone">
        /-------------------\
@@ -278,7 +274,6 @@
     </div>
   </div>
 
-  <!-- RETRO ON-SCREEN KEYBOARD -->
   <div class="virtual-keyboard">
     <div class="kb-row">
       <button class="key" onclick="pressKey('1')">1</button>
@@ -352,12 +347,12 @@
         successText: "ACCESS GRANTED. Passphrase verified. System authenticated!"
       },
       2: {
-        title: "NODE 2: KWANGYA SYNK Matrix",
+        title: "NODE 2: MAMAMOO SYNK Matrix",
         location: "Flat / Wilderness Grid",
-        briefing: "SECURITY CHECK 2: Multiply the number of aespa members (4) by 2016 (SM Culture Tech unveiling). Add 23 (Atomic weight of Na for Naevis).\nTarget Format: UNLOCK [NUMBER]",
-        solution: "8087",
-        hint: "(4 * 2016) + 23.",
-        successText: "SYNK LEVEL 100%. NAEVIS LINK ESTABLISHED. Node 2 online."
+        briefing: "SECURITY CHECK 2: She puts water bottles down the best.",
+        solution: "HWASA",
+        hint: "Think iconic stage moments with MAMAMOO!",
+        successText: "SYNK LEVEL 100%. MAMAMOO LINK ESTABLISHED. Node 2 online."
       },
       3: {
         title: "NODE 3: EXOPLANET Force Field",
