@@ -766,9 +766,10 @@
         const rewardContainer = document.createElement('div');
         rewardContainer.className = 'reward-container';
         
-        // Local image fallback path
+        // Dynamic fallback path checking common file names
         rewardContainer.innerHTML = `
-          <img src="image.jpg" alt="Taemin" class="reward-image" onerror="this.onerror=null; this.src='image.png';" />
+          <img src="./image.jpg" alt="Taemin" class="reward-image" 
+               onerror="this.onerror=null; this.src='./image.png'; if(!this.src.endsWith('jpeg')) this.onerror=function(){this.src='./image.jpeg';};" />
           <div class="reward-text">Taemin is always the answer</div>
         `;
         outputElem.appendChild(rewardContainer);
