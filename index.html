@@ -328,8 +328,7 @@
     .briefing-container {
       display: flex;
       flex-direction: column;
-      height: 100%;
-      justify-content: space-between;
+      gap: 12px;
     }
 
     .tap-continue-prompt {
@@ -343,14 +342,11 @@
       border: 1px dashed var(--term-warn);
       border-radius: 6px;
       background: rgba(255, 204, 0, 0.05);
-      opacity: 0;
-      transition: opacity 0.5s ease-in;
-      pointer-events: none;
+      display: none;
     }
 
     .tap-continue-prompt.visible {
-      opacity: 1;
-      pointer-events: auto;
+      display: block;
     }
 
     /* FINAL COMPLETION PAGE STYLES */
@@ -641,7 +637,7 @@
        /-------------------\
       /     R. I. P.        \
      /                       \
-    |  HERE LIES AN OPERATIVE |
+    |   HERE LIES AN OPERATIVE|
     |                         |
     |   DIED OF DYSENTERY     |
     |                         |
@@ -790,7 +786,7 @@
         location: "SYSTEM CORE",
         briefing: "What's the password?",
         solution: "HIIMDAISY",
-        hint: "I said Taemin is always the answer… not the password",
+        hint: "I said Taemin is always the answer… but not the password",
         hasImage: true,
         imageText: "Taemin is always the answer",
         successText: "NODE 7 UNLOCKED. TRANSFERRING CONTROL TO EMERGENCY POWER SYSTEM..."
@@ -841,7 +837,7 @@
         }
       } else {
         if (activeKeypad) {
-          if (activeKeypad.value.length < 10) {
+          if (activeKeypad.value.length < 6) {
             activeKeypad.value += char;
           }
         } else {
@@ -1094,7 +1090,7 @@
         const finalContainer = document.createElement('div');
         finalContainer.className = 'final-container';
         finalContainer.innerHTML = `
-          <img src="./my-animation.gif" alt="Completion Animation" class="final-animation-gif" />
+          <img src="./my-animation.GIF" alt="Completion Animation" class="final-animation-gif" />
           <div class="final-complete-message">Nodes complete.
 Stay tuned for more…
 
@@ -1117,28 +1113,32 @@ P.S. Have fun you guys!</div>
       const activeNode = NODES[gameState.currentNode];
 
       if (gameState.currentNode === 8 && !gameState.node8BriefingSeen) {
-        printLine(`==================================================`, "system", 5);
-        printLine(`  ${activeNode.title.toUpperCase()}`, "warn", 10);
-        printLine(`==================================================`, "system", 5);
-        printLine(`LOCATION TARGET: ${activeNode.location}\n`, "dim", 10);
-
         const briefingWrap = document.createElement('div');
         briefingWrap.className = 'briefing-container';
-        
-        const cluesText = document.createElement('div');
-        cluesText.className = 'line system';
-        cluesText.innerHTML = `DIRECTIVE CLUES:<br>1. Pinky<br>2. It’s been how many years? Add zero<br>3. It’s the whole theme`;
-        
-        const tapPrompt = document.createElement('div');
-        tapPrompt.className = 'tap-continue-prompt';
-        tapPrompt.innerText = '[ TAP ANYWHERE TO CONTINUE TO PUZZLE CONSOLE ]';
-        
-        briefingWrap.appendChild(cluesText);
-        briefingWrap.appendChild(tapPrompt);
+        briefingWrap.innerHTML = `
+          <div class="line warn">==================================================</div>
+          <div class="line warn">  ${activeNode.title.toUpperCase()}</div>
+          <div class="line warn">==================================================</div>
+          <div class="line dim">LOCATION TARGET: ${activeNode.location.toUpperCase()}</div>
+          <br>
+          <div class="line system">
+DIRECTIVE CLUES:
+1. Pinky
+2. It’s been how many years? Add zero
+3. It’s the whole theme
+          </div>
+          <div id="tap-prompt" class="tap-continue-prompt">
+            [ TAP ANYWHERE TO CONTINUE TO PUZZLE CONSOLE ]
+          </div>
+        `;
         outputElem.appendChild(briefingWrap);
 
+        const tapPrompt = document.getElementById('tap-prompt');
+
         setTimeout(() => {
-          tapPrompt.classList.add('visible');
+          if (tapPrompt) {
+            tapPrompt.classList.add('visible');
+          }
 
           const advanceHandler = function() {
             terminalContainer.removeEventListener('click', advanceHandler);
@@ -1153,12 +1153,10 @@ P.S. Have fun you guys!</div>
 
       terminalContainer.onclick = null;
 
-      if (gameState.currentNode !== 8 || !gameState.node8BriefingSeen) {
-        printLine(`==================================================`, "system", 5);
-        printLine(`  ${activeNode.title.toUpperCase()}`, "warn", 10);
-        printLine(`==================================================`, "system", 5);
-        printLine(`LOCATION TARGET: ${activeNode.location}`, "dim", 10);
-      }
+      printLine(`==================================================`, "warn", 5);
+      printLine(`  ${activeNode.title.toUpperCase()}`, "warn", 10);
+      printLine(`==================================================`, "warn", 5);
+      printLine(`LOCATION TARGET: ${activeNode.location}`, "dim", 10);
 
       if (activeNode.hasImage) {
         const mediaContainer = document.createElement('div');
@@ -1219,7 +1217,7 @@ P.S. Have fun you guys!</div>
           <div class="console-section">
             <span class="console-label">3. ENTER OVERRIDE KEYCODE</span>
             <div class="keypad-container">
-              <input type="text" id="passcode" class="keypad-input" placeholder="_____" maxlength="10" autocomplete="off" spellcheck="false" readonly>
+              <input type="text" id="passcode" class="keypad-input" placeholder="_ _ _ _ _ _" maxlength="6" autocomplete="off" spellcheck="false" readonly>
               <span class="keypad-cursor"></span>
             </div>
           </div>
