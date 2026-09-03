@@ -766,10 +766,15 @@
         const rewardContainer = document.createElement('div');
         rewardContainer.className = 'reward-container';
         
-        // Dynamic fallback path checking common file names
+        // Multi-fallback image loader specifically optimized for 'image1'
         rewardContainer.innerHTML = `
-          <img src="./image.jpg" alt="Taemin" class="reward-image" 
-               onerror="this.onerror=null; this.src='./image.png'; if(!this.src.endsWith('jpeg')) this.onerror=function(){this.src='./image.jpeg';};" />
+          <img src="./image1" alt="Taemin" class="reward-image" 
+               onerror="
+                 if (!this.tried) { this.tried = 1; this.src='./image1.jpeg'; }
+                 else if (this.tried === 1) { this.tried = 2; this.src='./image1.jpg'; }
+                 else if (this.tried === 2) { this.tried = 3; this.src='./image1.png'; }
+                 else if (this.tried === 3) { this.tried = 4; this.src='./image.1'; }
+               " />
           <div class="reward-text">Taemin is always the answer</div>
         `;
         outputElem.appendChild(rewardContainer);
