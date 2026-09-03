@@ -81,6 +81,7 @@
       font-size: 0.95rem;
       line-height: 1.35;
       -webkit-overflow-scrolling: touch;
+      position: relative;
     }
 
     .line {
@@ -218,15 +219,15 @@
     .switch-group {
       display: flex;
       justify-content: space-around;
-      gap: 6px;
+      gap: 10px;
     }
 
     .toggle-btn {
       background: #0b0f19;
       border: 2px solid #4a5568;
       color: #ff4d4d;
-      padding: 8px 12px;
-      font-size: 0.85rem;
+      padding: 10px 14px;
+      font-size: 0.9rem;
       font-weight: bold;
       border-radius: 6px;
       cursor: pointer;
@@ -305,9 +306,9 @@
     .status-success { color: #00ffcc; }
     .status-error { color: #ff4d4d; }
 
-    /* TAP CONTINUED CONTAINER */
+    /* TAP CONTINUE PROMPT AT BOTTOM */
     .tap-continue-prompt {
-      margin-top: 25px;
+      margin-top: auto;
       text-align: center;
       color: var(--term-warn);
       font-size: 0.95rem;
@@ -317,6 +318,14 @@
       border: 1px dashed var(--term-warn);
       border-radius: 6px;
       background: rgba(255, 204, 0, 0.05);
+      opacity: 0;
+      transition: opacity 0.5s ease-in;
+      pointer-events: none;
+    }
+
+    .tap-continue-prompt.visible {
+      opacity: 1;
+      pointer-events: auto;
     }
 
     /* RED COMPLETION TEXT */
@@ -740,7 +749,7 @@
         location: "SECURITY CONSOLE",
         briefing: "Set switches, adjust frequency alignment, and enter master passcode to complete manual override.",
         isConsoleNode: true,
-        hint: "Switches: UP - DOWN - DOWN - DOWN | Frequency: 400 | Passcode: DRAGON"
+        hint: "Switches: UP - DOWN - DOWN | Frequency: 400 | Passcode: DRAGON"
       }
     };
 
@@ -982,13 +991,12 @@
       const sw1 = document.getElementById('sw1').innerText === "UP";
       const sw2 = document.getElementById('sw2').innerText === "DOWN";
       const sw3 = document.getElementById('sw3').innerText === "DOWN";
-      const sw4 = document.getElementById('sw4').innerText === "DOWN";
       
       const sliderVal = document.getElementById('freqSlider').value;
       const passcode = document.getElementById('passcode').value.trim().toUpperCase();
       const feedback = document.getElementById('feedback');
 
-      if (sw1 && sw2 && sw3 && sw4 && sliderVal === "400" && passcode === "DRAGON") {
+      if (sw1 && sw2 && sw3 && sliderVal === "400" && passcode === "DRAGON") {
         feedback.className = "feedback-msg status-success";
         feedback.innerText = "ACCESS GRANTED! OVERRIDE COMPLETE...";
         
@@ -1062,24 +1070,31 @@
 
       if (gameState.currentNode === 8 && !gameState.node8BriefingSeen) {
         printLine(`DIRECTIVE CLUES:\n1. Pinky\n2. It’s been how many years? Add zero\n3. It’s the whole theme\n`, "system", 10);
-        
+
         const tapPrompt = document.createElement('div');
         tapPrompt.className = 'tap-continue-prompt';
         tapPrompt.innerText = '[ TAP ANYWHERE TO CONTINUE TO PUZZLE CONSOLE ]';
-        tapPrompt.onclick = advanceFromNode8Briefing;
         outputElem.appendChild(tapPrompt);
 
-        terminalContainer.onclick = function handleTapOnce(e) {
-          terminalContainer.onclick = null;
-          advanceFromNode8Briefing();
-        };
+        setTimeout(() => {
+          tapPrompt.classList.add('visible');
+
+          const advanceHandler = function() {
+            terminalContainer.removeEventListener('click', advanceHandler);
+            advanceFromNode8Briefing();
+          };
+
+          terminalContainer.addEventListener('click', advanceHandler);
+        }, 5000);
 
         return;
       }
 
       terminalContainer.onclick = null;
 
-      printLine(`DIRECTIVE:\n${activeNode.briefing}\n`, "system", 10);
+      if (gameState.currentNode !== 8) {
+        printLine(`DIRECTIVE:\n${activeNode.briefing}\n`, "system", 10);
+      }
 
       if (gameState.currentNode === 6) {
         const scrambleContainer = document.createElement('div');
@@ -1108,7 +1123,6 @@
               <button class="toggle-btn" id="sw1" onclick="toggleSwitch(this)">DOWN</button>
               <button class="toggle-btn" id="sw2" onclick="toggleSwitch(this)">DOWN</button>
               <button class="toggle-btn" id="sw3" onclick="toggleSwitch(this)">DOWN</button>
-              <button class="toggle-btn" id="sw4" onclick="toggleSwitch(this)">DOWN</button>
             </div>
           </div>
 
