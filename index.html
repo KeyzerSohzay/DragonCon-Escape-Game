@@ -20,15 +20,12 @@
       padding: 0;
     }
 
-    /* Lock body and HTML from scrolling completely */
     html, body {
       width: 100%;
       height: 100%;
       position: fixed;
       top: 0;
       left: 0;
-      right: 0;
-      bottom: 0;
       overflow: hidden;
       background-color: var(--bg-color);
       color: var(--term-green);
@@ -69,6 +66,33 @@
       flex-shrink: 0;
     }
 
+    /* Input moved to top to prevent iOS pan/scroll bug */
+    .terminal-input-line {
+      display: flex;
+      align-items: center;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--term-dim);
+      background: #080a0d;
+      flex-shrink: 0;
+    }
+
+    .prompt {
+      color: var(--term-green);
+      margin-right: 6px;
+      font-weight: bold;
+      font-size: 0.8rem;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #ffffff;
+      font-family: var(--font-stack);
+      font-size: 16px;
+    }
+
     .terminal-body {
       flex: 1;
       padding: 10px;
@@ -104,33 +128,7 @@
     .warn { color: var(--term-warn); }
     .user-input { color: #ffffff; }
 
-    .terminal-input-line {
-      display: flex;
-      align-items: center;
-      padding: 8px 10px;
-      border-top: 1px solid var(--term-dim);
-      background: #080a0d;
-      flex-shrink: 0;
-    }
-
-    .prompt {
-      color: var(--term-green);
-      margin-right: 6px;
-      font-weight: bold;
-      font-size: 0.8rem;
-    }
-
-    input[type="text"] {
-      flex: 1;
-      background: transparent;
-      border: none;
-      outline: none;
-      color: #ffffff;
-      font-family: var(--font-stack);
-      font-size: 16px; /* 16px prevents iOS from auto-zooming on focus */
-    }
-
-    /* --- RETRO DYSENTERY DEATH OVERLAY --- */
+    /* RETRO DYSENTERY OVERLAY */
     #death-screen {
       display: none;
       position: absolute;
@@ -188,13 +186,15 @@
       <span id="node-status">STATUS: ONLINE</span>
     </div>
     
-    <div class="terminal-body" id="terminal-body"></div>
-
+    <!-- INPUT AT TOP OF TERMINAL -->
     <div class="terminal-input-line">
       <span class="prompt">OPERATIVE@GRID:&gt;</span>
       <input type="text" id="cmd-input" placeholder="Type command..." autocomplete="off" spellcheck="false" />
     </div>
 
+    <div class="terminal-body" id="terminal-body"></div>
+
+    <!-- DYSENTERY OVERLAY -->
     <div id="death-screen" onclick="dismissDeathScreen()">
       <div class="tombstone">
        /-------------------\
@@ -259,21 +259,16 @@
     let printQueue = [];
     let isTyping = false;
 
-    // --- AGGRESIVE IOS SCROLL LOCK ---
-    function lockScroll() {
+    // Force Safari to stay locked at position 0,0
+    window.addEventListener('scroll', () => {
       window.scrollTo(0, 0);
-      document.body.scrollTop = 0;
-    }
+    });
 
-    window.addEventListener('scroll', lockScroll);
-    
-    // Dynamically size container to visual viewport when keyboard opens
     if (window.visualViewport) {
       window.visualViewport.addEventListener('resize', () => {
         const container = document.getElementById('terminal-container');
         container.style.height = `${window.visualViewport.height - 10}px`;
-        lockScroll();
-        outputElem.scrollTop = outputElem.scrollHeight;
+        window.scrollTo(0, 0);
       });
     }
 
@@ -349,7 +344,7 @@
     function showDysenteryDeath() {
       inputElem.blur();
       deathScreen.style.display = 'flex';
-      lockScroll();
+      window.scrollTo(0, 0);
     }
 
     function dismissDeathScreen() {
