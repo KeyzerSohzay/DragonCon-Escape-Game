@@ -36,16 +36,17 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      padding: 8px;
-      height: 100dvh; /* Adapts cleanly to mobile Safari toolbars */
+      padding: 6px;
+      height: 100dvh;
     }
 
+    /* MAIN TERMINAL SCREEN */
     .terminal-container {
       width: 100%;
       max-width: 800px;
       margin: 0 auto;
-      flex: 1; /* Automatically expands to take remaining top space */
-      min-height: 0; /* Prevents overflow pushing elements off screen */
+      flex: 1 1 auto;
+      min-height: 0; /* Ensures terminal shrinks so keyboard stays on screen */
       background: #050709;
       border: 2px solid var(--term-green);
       box-shadow: 0 0 15px rgba(0, 255, 102, 0.2);
@@ -54,7 +55,7 @@
       flex-direction: column;
       position: relative;
       overflow: hidden;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
 
     .terminal-header {
@@ -69,6 +70,7 @@
       flex-shrink: 0;
     }
 
+    /* TEXT AREA & INPUT BELONG IN THE SAME SCROLLABLE CONTAINER */
     .terminal-body {
       flex: 1;
       padding: 8px 10px;
@@ -103,22 +105,20 @@
     .warn { color: var(--term-warn); }
     .user-input { color: #ffffff; }
 
-    /* INTEGRATED TERMINAL INPUT BAR */
+    /* INPUT LINE DIRECTLY BELOW TERMINAL TEXT */
     .terminal-input-line {
       display: flex;
       align-items: center;
-      padding: 6px 10px;
-      border-top: 1px solid var(--term-dim);
-      background: #080a0d;
+      padding-top: 4px;
+      margin-top: 4px;
       flex-shrink: 0;
-      height: 36px;
     }
 
     .prompt {
       color: var(--term-green);
       margin-right: 6px;
       font-weight: bold;
-      font-size: 0.75rem;
+      font-size: 0.8rem;
     }
 
     .virtual-display {
@@ -140,18 +140,18 @@
       animation: blink 0.8s infinite;
     }
 
-    /* ON-SCREEN RETRO KEYBOARD */
+    /* FIXED RETRO ON-SCREEN KEYBOARD */
     .virtual-keyboard {
       width: 100%;
       max-width: 800px;
       margin: 0 auto;
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 3px;
       background: #080a0d;
-      border: 1px solid var(--term-dim);
+      border: 1px solid var(--term-green);
       border-radius: 6px;
-      padding: 6px 4px;
+      padding: 5px;
       flex-shrink: 0;
     }
 
@@ -164,13 +164,13 @@
 
     .key {
       flex: 1;
-      height: 36px;
+      height: 34px;
       background: #12161c;
       border: 1px solid var(--term-dim);
       border-radius: 4px;
       color: var(--term-green);
       font-family: var(--font-stack);
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       font-weight: bold;
       display: flex;
       justify-content: center;
@@ -186,7 +186,7 @@
 
     .key-wide { flex: 1.5; }
     .key-space { flex: 4; }
-    .key-enter { background: rgba(0, 255, 102, 0.15); border-color: var(--term-green); }
+    .key-enter { background: rgba(0, 255, 102, 0.2); border-color: var(--term-green); }
 
     /* RETRO DYSENTERY OVERLAY */
     #death-screen {
@@ -246,13 +246,16 @@
       <span id="node-status">STATUS: ONLINE</span>
     </div>
 
-    <div class="terminal-body" id="terminal-body"></div>
-
-    <!-- TERMINAL INPUT BAR -->
-    <div class="terminal-input-line">
-      <span class="prompt">OPERATIVE@GRID:&gt;</span>
-      <div class="virtual-display">
-        <span id="command-text"></span><span class="cursor"></span>
+    <!-- TERMINAL OUTPUT BODY -->
+    <div class="terminal-body" id="terminal-body">
+      <div id="output-text"></div>
+      
+      <!-- INPUT DISPLAY PLACED BELOW TEXT INSIDE TERMINAL -->
+      <div class="terminal-input-line">
+        <span class="prompt">OPERATIVE@GRID:&gt;</span>
+        <div class="virtual-display">
+          <span id="command-text"></span><span class="cursor"></span>
+        </div>
       </div>
     </div>
 
@@ -275,7 +278,7 @@
     </div>
   </div>
 
-  <!-- ON-SCREEN KEYBOARD -->
+  <!-- RETRO ON-SCREEN KEYBOARD -->
   <div class="virtual-keyboard">
     <div class="kb-row">
       <button class="key" onclick="pressKey('1')">1</button>
@@ -366,7 +369,8 @@
       }
     };
 
-    const outputElem = document.getElementById('terminal-body');
+    const terminalBody = document.getElementById('terminal-body');
+    const outputElem = document.getElementById('output-text');
     const commandTextElem = document.getElementById('command-text');
     const statusElem = document.getElementById('node-status');
     const deathScreen = document.getElementById('death-screen');
@@ -389,6 +393,7 @@
         }
       }
       commandTextElem.textContent = currentInput;
+      terminalBody.scrollTop = terminalBody.scrollHeight;
     }
 
     function submitCommand() {
@@ -440,7 +445,7 @@
         if (index < text.length) {
           line.textContent += text.charAt(index);
           index++;
-          outputElem.scrollTop = outputElem.scrollHeight;
+          terminalBody.scrollTop = terminalBody.scrollHeight;
           setTimeout(typeNextChar, speed);
         } else {
           line.classList.remove('typing');
