@@ -34,7 +34,6 @@
       justify-content: center;
       align-items: center;
       padding: 5px;
-      /* Dynamic viewport height handles mobile browser address bars */
       height: 100dvh; 
     }
 
@@ -153,18 +152,18 @@
     .tombstone {
       white-space: pre;
       color: #ffffff;
-      font-size: 0.65rem;
+      font-size: 0.55rem; /* Scaled down slightly so entire tombstone fits above keyboard on smaller phones */
       line-height: 1.1;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
     }
 
     .death-text {
       color: #ff3333;
-      font-size: 1.05rem;
+      font-size: 0.95rem;
       font-weight: bold;
       text-transform: uppercase;
       letter-spacing: 1px;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
 
     .retry-prompt {
@@ -254,10 +253,8 @@
     let printQueue = [];
     let isTyping = false;
 
-    // --- MOBILE KEYBOARD RESIZING LOGIC ---
     function adjustForMobileKeyboard() {
       if (window.visualViewport) {
-        // Dynamically resize body to match visible viewport height above keyboard
         document.body.style.height = `${window.visualViewport.height}px`;
         outputElem.scrollTop = outputElem.scrollHeight;
       }
@@ -345,8 +342,21 @@
     }
 
     function showDysenteryDeath() {
+      // 1. Unfocus input to trigger iOS to close keyboard
+      inputElem.blur();
+
+      // 2. Display screen
       deathScreen.style.display = 'flex';
-      inputElem.blur(); // Dismisses mobile keyboard so death animation is fully visible
+
+      // 3. Reset scroll offsets on screen and death screen container
+      window.scrollTo(0, 0);
+      deathScreen.scrollTop = 0;
+
+      // 4. Force viewport update after keyboard dismisses
+      setTimeout(() => {
+        adjustForMobileKeyboard();
+        deathScreen.scrollTop = 0;
+      }, 100);
     }
 
     function dismissDeathScreen() {
@@ -454,4 +464,4 @@
     renderNodePage();
   </script>
 </body>
-</html> 
+</html>
